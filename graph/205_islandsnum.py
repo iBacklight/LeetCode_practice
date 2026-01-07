@@ -5,7 +5,6 @@
 
 此外，你可以假设该网格的四条边均被水包围。
 
- 
 
 示例 1：
 
@@ -29,58 +28,57 @@
 """
 from typing import List
 def numIslands_dfs(grid: List[List[str]]) -> int:
-        # (i,j)相邻节点 ind 是在双节点上+'1'
-        row_len = len(grid)
-        col_len = len(grid[0])
-        num = {}
-        islands = 0
+    if not grid: return 0
+    m, n = len(grid), len(grid[0])
+    count = 0
 
-        def dfs(x, y, row_len, col_len):
-            for mov_dir in [(1, 0),(0, 1),(-1, 0),(0, -1)]:
-                nx = x + mov_dir[0]
-                ny = y + mov_dir[1]
-                if nx >= 0 and ny >= 0 and nx < row_len and ny < col_len:
-                    if grid[nx][ny] == "1":
-                        grid[nx][ny] = "0" # 把走过的地方变成0
-                        dfs(nx, ny, row_len, col_len)
+    def dfs(r, c):
+        # 越界或者不是陆地，直接返回
+        if not (0 <= r < m and 0 <= c < n and grid[r][c] == '1'):
+            return
 
-        for i in range(row_len):
-            for j in range(col_len):
-                if grid[i][j] == "1":
-                    islands += 1
-                    grid[i][j] = "0"
-                    dfs(i,j, row_len, col_len)
-      
-        return islands
+        grid[r][c] = '0' # 核沉没它！标记为已访问
+
+        # 向四个方向扩散
+        dfs(r+1, c)
+        dfs(r-1, c)
+        dfs(r, c+1)
+        dfs(r, c-1)
+
+    for i in range(m):
+        for j in range(n):
+            if grid[i][j] == '1':
+                count += 1
+                dfs(i, j) # dfs相当于将该岛屿直接沉没
+    return count
 
 def numIslands_bfs(grid: List[List[str]]) -> int:
-        from collections import deque
-        # (i,j)相邻节点 ind 是在双节点上+'1'
-        row_len = len(grid)
-        col_len = len(grid[0])
-        num = {}
-        islands = 0
+    from collections import deque
 
-        def bfs(x, y, row_len, col_len):
-            q = deque()
-            for mov_dir in [(1, 0),(0, 1),(-1, 0),(0, -1)]:
-                nx = x + mov_dir[0]
-                ny = y + mov_dir[1]
-                if nx >= 0 and ny >= 0 and nx < row_len and ny < col_len:
-                    if grid[nx][ny] == "1":
-                        grid[nx][ny] = "0" # 把走过的地方变成0
-                        q.append((nx, ny))
-            while len(q) > 0:
-                nx, ny = q.popleft()
-                bfs(nx, ny, row_len, col_len)
-            
-            return None
+    island_count = 0
+    r, c = len(grid), len(grid[0])
 
-        for i in range(row_len):
-            for j in range(col_len):
-                if grid[i][j] == "1":
-                    islands += 1
-                    grid[i][j] = "0"
-                    bfs(i,j, row_len, col_len)
-      
-        return islands
+    def bfs(i,j):
+        queue = deque() # 起点入队， 并且立即沉没
+        queue.append([i,j])
+        grid[i][j] = '0' 
+
+        while queue:
+            i, j = queue.popleft()
+
+            for pos_i, pos_j in [(-1,0), (1,0), (0,-1), (0,1)]:
+                cur_i, cur_j = i + pos_i,  j + pos_j
+
+                if 0 <= cur_i < len(grid) and 0 <= cur_j < len(grid[0]):
+                    if grid[cur_i][cur_j] == '1': 
+                        queue.append([cur_i, cur_j])    
+                        grid[cur_i][cur_j] = '0'# 一样，加入队列，然后立即沉没
+                        # 相当于他们是同一“组”
+
+    for i in range(r):
+        for j in range(c):
+            if grid[i][j] == "1":
+                island_count += 1
+                bfs(i,j)
+    
+    return island_count

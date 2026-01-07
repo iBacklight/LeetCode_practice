@@ -33,7 +33,12 @@
 | 23   | 875      | [爱吃香蕉的珂珂](#lc-875)                            | 🟡 中等 | 二分查找（转换）      | 值域二分              |
 | 24   | 410      | [分割数组的最大值](#lc-410)                          | 🔴 困难 | 二分查找              | 值域二分              |
 | 25   | 1004     | [最大连续1的个数 III](#lc-1004)                      | 🟡 中等 | 滑动窗口/二分查找     | 值域二分              |
-
+| 26   | 200 | [岛屿数量](#lc-200) | 🟡 中等 | 网格 DFS (沉没法)/BFS | 图论 / 网格搜索 |
+| 27 | 695 | [岛屿的最大面积](#lc-695) | 🟡 中等 | 网格 DFS (沉没法)/BFS | 图论 / 网格搜索 |
+| 28  | 994 | [腐烂的橘子](#lc-994) | 🟡 中等 | 多源 BFS | 图论 / 网格搜索 |
+| 29  | 207 | [课程表](#lc-207) | 🟡 中等 | 拓扑排序 (Kahn算法) | 图论 / 依赖解析 |
+| 30 | 210 | [课程表 II](#lc-210) | 🟡 中等 | 拓扑排序 (输出路径) | 图论 / 依赖解析 |
+| 31  | 133 | [克隆图](#lc-133) | 🟡 中等 | DFS/BFS + 哈希表 | 图论 / 普通遍历 |
 ---
 
 ## 模块一：线性扫描优化 (Linear Scan Optimization)
@@ -943,9 +948,7 @@ def searchMinimize(left, right):
 
 这是最传统的二分，在一个显式的数组中查找目标值的下标。
 
-- 核心逻辑：
-
-  通过比较 nums[mid] 和 target 的大小，缩小 [left, right] 的下标范围。
+- **核心逻辑**：通过比较 nums[mid] 和 target 的大小，缩小 [left, right] 的下标范围。
 
 - **包含题目**：
 
@@ -1239,3 +1242,365 @@ def searchMinimize(left, right):
     
     - **最优解是滑动窗口**。
     - **二分做法**：可以对“最长长度”进行二分。猜一个长度 `len`，检查数组中是否存在一个长度为 `len` 的子数组，其包含的 0 的个数不超过 `k`。复杂度 $O(N \log N)$，不如滑动窗口 $O(N)$。
+
+
+
+## 模块五：图论与搜索 (Graph Theory & Search)
+
+我们把图论题分为两种背景：
+
+1. **具象图（网格 Grid）**：在这个世界里，节点是矩阵中的格子 `(r, c)`，边是“上下左右”四个方向。
+2. **抽象图（邻接表 Adjacency List）**：在这个世界里，节点是 ID（0, 1, 2...），边是依赖关系（课程表、社交网络）。
+
+### 体系一：网格图搜索 (Grid DFS/BFS) —— “岛屿问题”
+
+这是图论中最直观的类型。核心是**“沉没法”**（避免使用额外的 visited 数组，直接修改原数组标记已访问）。
+
+| **算法选择**            | **适用场景**                             | **典型题目**    |
+| ----------------------- | ---------------------------------------- | --------------- |
+| **DFS (递归)**          | 找连通块数量、找最大面积（不求最短路径） | 200. 岛屿数量   |
+| **BFS (队列)**          | **多源**扩散、求**最短**路径/层数        | 994. 腐烂的橘子 |
+| **回溯 (Backtracking)** | 找特定路径（走不通要回头）               | 79. 单词搜索    |
+
+这里，DFS（深度优先搜索）和 BFS（广度优先搜索）本质上都是**图的遍历算法**。它们的区别在于**“遍历的顺序”**以及**“使用的数据结构”**。我们来总结一下他们的用法：
+
+#### 1. DFS：深度优先搜索 (Depth-First Search)
+
+**核心口诀**：“不撞南墙不回头”。
+
+- **行为模式**：一条路走到头。从起点出发，选定一个方向一直往下钻，直到无路可走（碰到边界或已访问节点），然后回溯（Backtrack）到上一个路口，换个方向继续钻。
+- **数据结构**：**栈 (Stack)**。
+  - 通常使用 **递归 (Recursion)** 实现，利用系统调用栈（System Call Stack）。
+  - 也可以手动维护一个栈来实现迭代版本。
+- **适用场景**：
+  - **找连通性**：判断两点是否相通（如 200. 岛屿数量）。
+  - **找所有解**：虽然这也是回溯的范畴，但 DFS 是基础。
+  - **拓扑排序**（后序遍历）。
+
+**DFS 通用模板 (递归版 - 最常用)**
+
+以**网格图 (Grid)** 为例（如岛屿问题），这是面试中最常见的 DFS 场景。
+
+```Python
+def dfs_grid(grid, r, c):# visited grid, row, col
+    # 1. Base Case (终止条件)
+    # 越界，或者遇到了边界条件，或者遇到了已经访问过的节点
+    if not (0 <= r < len(grid) and 0 <= c < len(grid[0])) or grid[r][c] != '1':
+        return
+
+    # 2. Mark Visited (标记已访问)
+    # 在网格题中，通常直接修改原数组来标记（如把陆地变成海水），避免使用额外的 visited 集合
+    grid[r][c] = '2' # 标记为 2 表示已访问，或者直接变 '0' 沉没
+
+    # 3. Recursion (递归访问邻居)
+    # 上下左右四个方向
+    dfs_grid(grid, r - 1, c) # 上
+    dfs_grid(grid, r + 1, c) # 下
+    dfs_grid(grid, r, c - 1) # 左
+    dfs_grid(grid, r, c + 1) # 右
+
+# 调用入口
+# for i in range(rows):
+#     for j in range(cols):
+#         if grid[i][j] == '1':
+#             dfs_grid(grid, i, j)
+```
+
+#### 2. BFS：广度优先搜索 (Breadth-First Search)
+
+**核心口诀**：“层层推进，地毯式搜索”。
+
+- **行为模式**：像水波纹扩散一样。先访问**离起点最近**的所有节点（第1层），再访问离起点距离为2的所有节点（第2层）, 以此类推。
+- **数据结构**：**队列 (Queue)**。
+  - 由于我们寻找的是每时每刻离当前起点最近的邻接点，所以需要维护一个类似于先入先出的队列，并且要随时retrieve队列的头部值。
+  - 必须使用 `collections.deque`，因为列表的 `pop(0)` 是 $O(N)$，而 deque 的 `popleft()` 是 $O(1)$。
+- **适用场景**：
+  - **最短路径 (Shortest Path)**：这是 BFS 的杀手锏。在**无权图**中，BFS 第一次找到目标时走过的步数一定是最少的（如 994. 腐烂的橘子）。
+  - **层序遍历**：如二叉树的层序遍历。
+
+**BFS 通用模板 (层序遍历版 - 强烈推荐)**
+
+这个模板非常重要，因为它包含了一个 `for _ in range(size)` 的循环，这样你可以清楚地知道**当前是在第几层**（也就是走了几步）。这对于计算“最短路径”或“腐烂需要几分钟”至关重要。BFS的开始通常是：**找到这个图的起点先入队**！
+
+```Python
+from collections import deque
+
+def bfs(start_node, target_node):
+    # 1. 初始化队列和 visited 集合
+    queue = deque([start_node])
+    # 避免走回头路，但是这个像dfs一样直接用原grid中使用不同状态取代
+    visited = set([start_node]) 
+    step = 0 # 记录扩散的步数（层数）
+
+    while queue:
+        # 2. 获取当前层级的节点数量
+        # 这一步很关键！它锁定了当前层有多少个节点
+        size = len(queue)
+        
+        # 3. 遍历当前层的所有节点
+        for _ in range(size):
+            cur = queue.popleft()
+            
+            # 4. 判断是否到达终点
+            if cur == target_node:
+                return step
+            
+            # 5. 将所有未访问的邻居加入队列
+            # get_neighbors 是一个假设函数，根据题目不同而定
+            for neighbor in get_neighbors(cur):
+                if neighbor not in visited:
+                    visited.add(neighbor)
+                    queue.append(neighbor)
+        
+        # 6. 当前层遍历结束，步数 +1
+        step += 1
+    
+    return -1 # 没找到
+```
+
+------
+
+### DFS vs BFS 核心对比图
+
+为了方便记忆，我们可以做一个简单的对比：
+
+| **特性**       | **DFS (深度优先)**          | **BFS (广度优先)**       |
+| -------------- | --------------------------- | ------------------------ |
+| **比喻**       | 走迷宫 (一条路走到黑)       | 水波纹 (一圈圈扩散)      |
+| **数据结构**   | **Stack** (递归/系统栈)     | **Queue** (队列)         |
+| **最短路径?**  | 不能保证最短                | **一定是最短** (无权图)  |
+| **空间复杂度** | $O(H)$ (H为树高/递归深度)   | $O(W)$ (W为最大宽度)     |
+| **典型例题**   | 岛屿数量 (200), 全排列 (46) | 腐烂橘子 (994), 最小步数 |
+| **代码风格**   | 递归简洁，逻辑深奥          | 迭代清晰，模板固定       |
+
+问题：既然直接改 Grid 这么爽，为什么我们还会看到很多代码在DFS/BFS时用 `seen`？主要有三个原因：
+
+1. **题目不允许修改输入 (Read-only)**： 有的面试官会要求：“输入矩阵代表地图，你不能把地图改坏了，后面还要用”。这时候必须用 `seen`。
+2. **状态回溯 (Backtracking)**： 比如 **79. 单词搜索**。这条路走不通，我要退回来，把标记擦掉。如果直接修改 grid ，回退时还得记住原来的值改回去。用 `visited` 集合（或局部标记）更方便逻辑管理。
+3. **复杂的图结构**： 比如 **133. 克隆图** 或者 **207. 课程表**。这些题目给的不是二维矩阵，而是邻接表。你没法像在矩阵里那样简单地把 `1` 变成 `0`。你必须用一个哈希表或数组来记录哪个节点 ID 被访问过。
+
+下面我们来直接看典型的题目
+
+- **包含题目**：
+
+  - **200. 岛屿数量** (Grid DFS 母题) <a id="lc-200"></a>
+
+    - **核心逻辑**：遍历矩阵，遇到 `'1'` (陆地) 就让计数器 +1，然后立马启动 DFS，把这块陆地连同和它相连的所有陆地都变成 `'0'` (沉没)。这样主循环下次就不会再重复统计它们了。
+
+    ```Python
+    def numIslands(self, grid: List[List[str]]) -> int:
+        if not grid: return 0
+        m, n = len(grid), len(grid[0])
+        count = 0
+    
+        def dfs(r, c):
+            # 越界或者不是陆地，直接返回
+            if not (0 <= r < m and 0 <= c < n and grid[r][c] == '1'):
+                return
+    
+            grid[r][c] = '0' # 核沉没它！标记为已访问
+    
+            # 向四个方向扩散
+            dfs(r+1, c)
+            dfs(r-1, c)
+            dfs(r, c+1)
+            dfs(r, c-1)
+    
+        for i in range(m):
+            for j in range(n):
+                if grid[i][j] == '1':
+                    count += 1
+                    dfs(i, j) # dfs相当于将该岛屿直接沉没
+        return count
+    ```
+
+    当然，本题也可以用BFS求解。本题是单源bfs，每个岛屿当作独立事件来处理：**“把属于当前这个岛屿的所有陆地全部挖出来（标记为已访问）”**
+
+    ```python
+    def numIslands(self, grid: List[List[str]]) -> int:
+        from collections import deque
+    
+        island_count = 0
+        r, c = len(grid), len(grid[0])
+    
+        def bfs(i,j):
+            queue = deque() # 起点入队， 并且立即沉没
+            queue.append([i,j])
+            grid[i][j] = '0' 
+    
+            while queue:
+                i, j = queue.popleft()
+    
+                for pos_i, pos_j in [(-1,0), (1,0), (0,-1), (0,1)]:
+                    cur_i, cur_j = i + pos_i,  j + pos_j
+    
+                    if 0 <= cur_i < len(grid) and 0 <= cur_j < len(grid[0]):
+                        if grid[cur_i][cur_j] == '1': 
+                            # 一样，加入队列，然后立即沉没
+                            queue.append([cur_i, cur_j])    
+                            grid[cur_i][cur_j] = '0'
+                            # 相当于他们是同一“组”
+    
+        for i in range(r):
+            for j in range(c):
+                if grid[i][j] == "1":
+                    island_count += 1
+                    bfs(i,j)
+    
+        return island_count
+    ```
+
+  - **[695. 岛屿的最大面积](https://leetcode.cn/problems/max-area-of-island/)** <a id="lc-695"></a>
+
+    - 与200类似，只增加了一个面积
+
+    ```python
+    def maxAreaOfIsland(self, grid: List[List[int]]) -> int:
+            r, c = len(grid), len(grid[0])
+            max_area = 0
+    
+            def dfs(i, j, r, c, cur_area):
+                if 0 <= i < r and 0 <= j < c and grid[i][j] == 1:
+                    grid[i][j] = 0 # 沉没
+                    cur_area += 1
+                else:# 终止条件：返回当前面积
+                    return cur_area
+                
+                # dfs adjacent nodes
+                for pos_i, pos_j in [(-1,0),(1,0),(0,-1),(0,1)]:
+                    cur_area = dfs(i+pos_i, j+pos_j, r, c, cur_area)
+                return cur_area
+    
+            cur_area = 0
+            for i in range(r):
+                for j in range(c):
+                    if grid[i][j] == 1:
+                        cur_area = dfs(i, j, r, c, cur_area)
+                        max_area = max(max_area, cur_area)
+                        cur_area = 0
+    
+            return max_area
+    ```
+    
+  - **994. 腐烂的橘子** (**多源** BFS) <a id="lc-994"></a>
+  
+    - **核心逻辑**：
+  
+      1. 这题求的是“最小分钟数”（最短路径），所以**必须用 BFS**，不能用 DFS。
+      2. 这是一个**“多源 BFS”**，一开始队列里可能有多个烂橘子。它们是同时向外扩散的。所以，这个图的起点就是第一批腐烂的橘子，我们先将他们入队
+      3. 每一轮（level）扩散，时间 +1。
+      4. 注意：因为腐烂过程是 **“并发” (Parallel)** 的。而我们的目的是求所有源头同时扩散的最短时间，所以在一开始（队列起点）就要入队所有源头。这也是被称作多源bfs的原因。
+  
+      ```python
+      def orangesRotting(self, grid: List[List[int]]) -> int:
+          from collections import deque
+      
+          queue = deque() # deque可以把pop(0)的复杂度变为O(1)
+          minutes = 0
+          fresh = 0
+          r, c = len(grid), len(grid[0])
+      
+          # 将腐烂的橘子做为起点入队
+          for i in range(r):
+              for j in range(c):
+                  if grid[i][j] == 2:
+                      queue.append([i,j])
+                  elif grid[i][j] == 1:
+                      fresh += 1 # 记录新鲜橘子数量以满足-1返回
+      
+          if len(queue) == 0 and fresh > 0: # 
+              return -1
+          elif len(queue) == 0 and fresh == 0:
+              return 0
+      
+          # BFS 开始
+          while queue and fresh > 0:# 条件：当前队列中仍然有邻接的腐烂橘子，或者没有新鲜橘子了
+          #第二个条件对最少时间至关重要，否则去三年后i
+              for ro in range(len(queue)):# 遍历当前所有的腐烂橘子
+                  i,j = queue.popleft() # 从最近的开始
+      
+                  # 它的四周开始腐烂
+                  for pos_i, pos_j in [(-1,0), (1,0), (0,-1), (0,1)]:
+                      cur_i, cur_j = i + pos_i, j + pos_j
+      
+                      # 边界条件
+                      if 0 <= cur_i < len(grid) and 0 <= cur_j < len(grid[0]):
+                          if grid[cur_i][cur_j] == 1: # 找到新鲜橘子
+                              grid[cur_i][cur_j] = 2
+                              queue.append([cur_i, cur_j]) # 新的腐烂橘子入队
+                              fresh -= 1
+              minutes += 1
+      
+          if fresh > 0: # queue空了（所有腐烂橘子均已遍历，没有邻接的新鲜橘子），
+          # 但是还有新鲜橘子数量还有，说明剩下的新鲜橘子，均不与腐烂橘子邻接
+              return -1
+          return minutes
+      ```
+  
+      
+  
+  - **79. 单词搜索** (网格回溯) <a id="lc-79"></a>
+  
+    - **核心逻辑**：在网格里找一条路径。不同于“岛屿沉没”，这里如果路走不通，需要**撤销选择**（把标记过的格子还原），以便别的路径还能用这个格子。
+
+
+
+### 体系二：拓扑排序 (Topological Sort) —— “依赖解析”
+
+遇到 **“课程表”、“依赖关系”、“先后顺序”、“死锁检测”** 这类关键词，直接上拓扑排序。
+
+- **核心工具**：**入度表 (Indegree Array)** + **BFS (Kahn 算法)**。
+
+- **包含题目**：
+
+  - **207. 课程表** (检测有向图是否有环) <a id="lc-207"></a>
+
+    - **核心逻辑**：
+      1. **建图**：用邻接表 `adj = {前置课: [后继课1, 后继课2]}`。
+      2. **入度**：统计每一门课还要等几门前置课才能修 `indegree[i]`。
+      3. **启动**：把所有“入度为 0”（不需要前置课）的课放入 Queue。
+      4. **BFS**：每修一门课，就把它的后继课入度减 1。如果某后继课入度减为 0，说明它也能修了，入队。
+      5. **判断**：最后看修完的课程数量是否等于总课程数。
+
+    ```Python
+    def canFinish(self, numCourses: int, prerequisites: List[List[int]]) -> bool:
+        from collections import deque, defaultdict
+    
+        # 1. 建图和入度表
+        adj = defaultdict(list)
+        indegree = [0] * numCourses
+    
+        for cur, pre in prerequisites:
+            adj[pre].append(cur) # pre -> cur
+            indegree[cur] += 1
+    
+        # 2. 将所有入度为 0 的节点入队
+        queue = deque([i for i in range(numCourses) if indegree[i] == 0])
+        count = 0 # 记录修了多少门课
+    
+        # 3. BFS 拓扑排序
+        while queue:
+            course = queue.popleft()
+            count += 1
+    
+            for neighbor in adj[course]:
+                indegree[neighbor] -= 1 # 消除依赖
+                if indegree[neighbor] == 0:
+                    queue.append(neighbor)
+    
+        return count == numCourses
+    ```
+
+  - **210. 课程表 II** (输出拓扑排序结果) <a id="lc-210"></a>
+
+    - **逻辑**：和 207 完全一样，只不过需要用一个列表 `res` 记录每次 `pop` 出来的课程顺序。
+
+
+
+### 体系三：普通图的遍历 (Graph Traversal)
+
+处理一般的无向图或有向图，核心是 **“防止走回头路”** (visited set) 和 **“深拷贝”**。
+
+- **包含题目**：
+  - **133. 克隆图** (图的深拷贝) <a id="lc-133"></a>
+    - **核心逻辑**：由于图可能有环，通过 `HashMap` 来记录 `原节点 -> 克隆节点` 的映射。如果一个节点已经克隆过（在 Map 里），直接返回 Map 里的引用，否则创建新节点并递归克隆邻居。
