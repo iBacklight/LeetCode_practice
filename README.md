@@ -36,9 +36,11 @@
 | 26   | 200 | [岛屿数量](#lc-200) | 🟡 中等 | 网格 DFS (沉没法)/BFS | 图论 / 网格搜索 |
 | 27 | 695 | [岛屿的最大面积](#lc-695) | 🟡 中等 | 网格 DFS (沉没法)/BFS | 图论 / 网格搜索 |
 | 28  | 994 | [腐烂的橘子](#lc-994) | 🟡 中等 | 多源 BFS | 图论 / 网格搜索 |
-| 29  | 207 | [课程表](#lc-207) | 🟡 中等 | 拓扑排序 (Kahn算法) | 图论 / 依赖解析 |
-| 30 | 210 | [课程表 II](#lc-210) | 🟡 中等 | 拓扑排序 (输出路径) | 图论 / 依赖解析 |
-| 31  | 133 | [克隆图](#lc-133) | 🟡 中等 | DFS/BFS + 哈希表 | 图论 / 普通遍历 |
+| 29 | 79 | [单词搜索](#lc-79) | 🟡 中等 | DFS/ 网格回溯 | 图论 / 网格搜索 |
+| 30 | 207 | [课程表](#lc-207) | 🟡 中等 | 拓扑排序 (Kahn算法) | 图论 / 依赖解析 |
+| 31 | 210 | [课程表 II](#lc-210) | 🟡 中等 | 拓扑排序 (输出路径) | 图论 / 依赖解析 |
+| 32 | 133 | [克隆图](#lc-133) | 🟡 中等 | DFS/BFS + 哈希表 | 图论 / 普通遍历 |
+| 33 | 208 | [Trie前缀树](#lc=208) | 🟡 中等 | 树 | 图论/树 |
 ---
 
 ## 模块一：线性扫描优化 (Linear Scan Optimization)
@@ -1358,9 +1360,9 @@ def bfs(start_node, target_node):
     return -1 # 没找到
 ```
 
-------
 
-### DFS vs BFS 核心对比图
+
+#### DFS vs BFS 核心对比图
 
 为了方便记忆，我们可以做一个简单的对比：
 
@@ -1537,13 +1539,45 @@ def bfs(start_node, target_node):
           return minutes
       ```
   
-      
-  
   - **79. 单词搜索** (网格回溯) <a id="lc-79"></a>
   
     - **核心逻辑**：在网格里找一条路径。不同于“岛屿沉没”，这里如果路走不通，需要**撤销选择**（把标记过的格子还原），以便别的路径还能用这个格子。
-
-
+    
+    ```python
+    def exist(self, board: List[List[str]], word: str) -> bool:
+        r, c = len(board), len(board[0])
+        L = len(word)
+        if L > r * c: # 大于总board数量直接返回
+            return False
+    
+        def dfs(i: int, j: int, k: int) -> bool:
+            # k 表示正在匹配 word[k]
+            if board[i][j] != word[k]:# 非当前字符直接false
+                return False
+            if k == L - 1: # 
+                return True
+    
+            ch = board[i][j]
+            board[i][j] = "#"  # 标记访问
+    
+            for pos_i, pos_j in [(-1, 0), (1, 0), (0, -1), (0, 1)]:
+                now_i, now_j = i + pos_i, j + pos_j
+                if 0 <= now_i < r and 0 <= now_j < c and board[now_i][now_j] != "#":
+                    if dfs(now_i, now_j, k + 1):
+                        board[i][j] = ch  # 恢复
+                        return True
+    
+            board[i][j] = ch  # 恢复，即撤销之前的visited更改
+            return False
+    
+        for i in range(r):
+            for j in range(c):
+                if board[i][j] == word[0] and dfs(i, j, 0):
+                    return True
+        return False
+    ```
+    
+    
 
 ### 体系二：拓扑排序 (Topological Sort) —— “依赖解析”
 
@@ -1564,38 +1598,42 @@ def bfs(start_node, target_node):
 
     ```Python
     def canFinish(self, numCourses: int, prerequisites: List[List[int]]) -> bool:
+        # 需要注意的是，虽然提示中提到prerequisites[i].length == 2
+        # 但是一节课依然可以有多节先修，通过多个prerequisites pair表示，所以一定要建立入度表
         from collections import deque, defaultdict
     
-        # 1. 建图和入度表
-        adj = defaultdict(list)
-        indegree = [0] * numCourses
+        cres_queue = deque([])
+        adj = defaultdict(list) # 邻接表，建图
+        # 入度表，代表有多少个“前置条件”，包括多跳前置课程
+        indegree = defaultdict(int) 
+        total_cres = 0
     
-        for cur, pre in prerequisites:
-            adj[pre].append(cur) # pre -> cur
-            indegree[cur] += 1
+        for cres, pre in prerequisites:
+            adj[pre].append(cres)
+            indegree[cres] += 1
     
-        # 2. 将所有入度为 0 的节点入队
-        queue = deque([i for i in range(numCourses) if indegree[i] == 0])
-        count = 0 # 记录修了多少门课
+        for cres in range(numCourses):# 没有依赖的课程直接修，入队
+            if indegree[cres] == 0:
+                cres_queue.append(cres)
     
-        # 3. BFS 拓扑排序
-        while queue:
-            course = queue.popleft()
-            count += 1
+        if len(cres_queue) == numCourses: # 满足直接返回True
+            return True
     
-            for neighbor in adj[course]:
-                indegree[neighbor] -= 1 # 消除依赖
-                if indegree[neighbor] == 0:
-                    queue.append(neighbor)
+        while cres_queue:# BFS开始，从入队的课程逐渐向所有课程扩散
+            pre = cres_queue.popleft()
+            total_cres += 1
+            # 寻找没有度（没有依赖）的课程是哪些课程的依赖，这些课程可以减度
+            for cres in adj[pre]:
+                indegree[cres] -= 1
+                if indegree[cres] == 0:
+                    cres_queue.append(cres)
     
-        return count == numCourses
+        return total_cres == numCourses
     ```
-
+  
   - **210. 课程表 II** (输出拓扑排序结果) <a id="lc-210"></a>
-
+  
     - **逻辑**：和 207 完全一样，只不过需要用一个列表 `res` 记录每次 `pop` 出来的课程顺序。
-
-
 
 ### 体系三：普通图的遍历 (Graph Traversal)
 
@@ -1603,4 +1641,61 @@ def bfs(start_node, target_node):
 
 - **包含题目**：
   - **133. 克隆图** (图的深拷贝) <a id="lc-133"></a>
+  
     - **核心逻辑**：由于图可能有环，通过 `HashMap` 来记录 `原节点 -> 克隆节点` 的映射。如果一个节点已经克隆过（在 Map 里），直接返回 Map 里的引用，否则创建新节点并递归克隆邻居。
+  
+  - **208. Trie前缀树**（树，以空间换时间）<a id="lc-208"></a>
+  
+    - 利用字符串的**公共前缀**来降低查询时间的开销。它不是把单词存在一个平铺的字典里，而是存成一棵树。
+    - 例如，插入 "apple" 和 "app"，树的结构是： `root -> a -> p -> p (end) -> l -> e (end)`
+    - 我们需要定义一个树节点 `TrieNode`，每个节点包含：
+      1. `children`: 一个字典（或数组），指向下一个字符的节点。
+      2. `isEnd`: 一个布尔值，标记当前节点是否是一个单词的结尾。
+  
+    ```python
+    class TrieNode:
+        def __init__(self):
+            # key: char, value: TrieNode
+            self.children = {} 
+            # 标记是否是单词结尾（比如 'apple' 里的 'e' 是 True，中间的 'p' 是 False）
+            self.isEnd = False
+    
+    class Trie:
+    
+        def __init__(self):
+            self.root = TrieNode()
+    
+        def insert(self, word: str) -> None:
+            node = self.root
+            for char in word:
+                # 如果当前字符不在子节点中，创建一个新节点
+                if char not in node.children:
+                    node.children[char] = TrieNode()
+                # 移动到子节点
+                node = node.children[char]
+            # 单词遍历完，在最后一个节点标记为单词结束
+            node.isEnd = True
+    
+        def search(self, word: str) -> bool:
+            node = self.searchPrefix(word)
+            # 两个条件：
+            # 1. 节点存在 (即路径走通了)
+            # 2. isEnd 为 True (必须是完整单词，不能只是别人的前缀)
+            return node is not None and node.isEnd
+    
+        def startsWith(self, prefix: str) -> bool:
+            node = self.searchPrefix(prefix)
+            # 只要能走完前缀的路径，就返回 True，不需要管 isEnd
+            return node is not None
+    
+        # 辅助函数：专门用来走路径
+        def searchPrefix(self, prefix: str) -> TrieNode:
+            node = self.root
+            for char in prefix:
+                if char not in node.children:
+                    return None # 路径断了，说明不存在
+                node = node.children[char]
+            return node
+    ```
+  
+    
