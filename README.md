@@ -56,7 +56,7 @@
 | 46 | 79 | [单词搜索](#lc-79) | 🔥 | 🟡 中等 | 网格回溯 (原地修改) | 二维网格路径 |
 | 47 | 17 | [电话号码的字母组合](#lc-17) | 🔥 | 🟡 中等 | 回溯 (层级映射) | 映射回溯 |
 | 48 | 51 | [N 皇后](#lc-51) | | 🔴 困难 | 回溯 | 回溯 |
-| 49 | 22 | [括号生成](#lc-22) | 🔥 | 🟡 中等 | 回溯 (隐式/约束控制) | 隐式回溯 |
+| 49 | 22 | [括号生成](#lc-22) | 🔥 | 🟡 中等 | 回溯 | 回溯 |
 
 ---
 
@@ -1739,7 +1739,7 @@ def bfs(start_node, target_node):
 
 - **包含题目**：
 
-  - **46. 全排列** (Hot 100)
+  - **46. 全排列** (Hot 100)<a id="lc-46"></a>
 
     - **分析**：这是回溯的“母题”。因为所有数字都互不相同，我们可以直接用 `if num in path` 来判断是否已选。
 
@@ -1824,7 +1824,7 @@ def bfs(start_node, target_node):
   
 - **包含题目**：
   
-  - **78. 子集** 
+  - **78. 子集** <a id="lc-78"></a>
     
     - **分析**：全排列是收集“叶子节点”，子集是收集树上的**每一个节点**。
     - **逻辑**：每次进入递归都 `res.append(path[:])`。递归调用时传入 `i + 1`。
@@ -1860,7 +1860,7 @@ def bfs(start_node, target_node):
             return res
     ```
     
-  - **39. 组合总和**
+  - **39. 组合总和**<a id="lc-39"></a>
     
     - **分析**：数字可以**被无限制重复选取**。
     - **区别**：递归调用时传入 **`i`** 而不是 `i + 1`。这意味着“当前这个数字，我下一层还可以接着选它”。
@@ -1909,7 +1909,7 @@ def bfs(start_node, target_node):
         return res
     ```
     
-  - **77. 组合**
+  - **77. 组合**<a id="lc-77"></a>
     
     - **分析**：返回范围 `[1, n]` 中所有 `k` 个数的组合。
     - **逻辑**：标准的 `start_index` 控制，递归调用传入 `i + 1`。
@@ -1925,7 +1925,7 @@ def bfs(start_node, target_node):
 
 - **包含题目**：
 
-  - **131. 分割回文串** (Hot 100)
+  - **131. 分割回文串** (Hot 100)<a id="lc-131"></a>
 
     - **分析**：把字符串切成若干块，要求每一块都是回文串。
 
@@ -1940,6 +1940,46 @@ def bfs(start_node, target_node):
               backtrack(i + 1)    # 递归剩下的部分
               path.pop()          # 撤销选择
       ```
+  
+  - **22. 括号组合**<a id="lc-22"></a>
+  
+    - 左右括号要有顺序插入, 不能随机打乱; 只有剩余的右括号比左括号多（说明加的左括号比右括号多），才能加右括号。
+  
+    ```python
+    def generateParenthesis(self, n: int) -> List[str]:
+        path = []
+        res = []
+        max_len = n * 2
+        fq_count = bq_count = n
+    
+        def backtraces(fq_count, bq_count):
+            # 终止条件
+            if len(path) == max_len:
+                str_path = "".join(path)
+                res.append(str_path)
+                return
+    
+            # 每次进来都回溯两次，一次加前括号，一次加后括号
+            # 先加左括号,只要还有就一直加
+            if fq_count > 0:
+                path.append("(")
+                backtraces(fq_count-1, bq_count)
+                path.pop()
+    
+        # 只有剩余的右括号比左括号多（说明加的左括号比右括号多），才能加右括号
+            if bq_count > fq_count:
+                path.append(")")
+                backtraces(fq_count, bq_count-1)
+                # 会一直pop直到fq_count!=0
+                path.pop()
+    
+            return
+        backtraces(fq_count, bq_count)
+    
+        return res
+    ```
+  
+    
 
 ### 体系四：网格回溯 (Grid Backtracking) —— “二维重置”
 
@@ -1964,7 +2004,7 @@ def bfs(start_node, target_node):
 每一层递归面对的选择列表是不同的。
 
 - **包含题目**：
-  - **17. 电话号码的字母组合** (Hot 100)
+  - **17. 电话号码的字母组合** (Hot 100) <a id="lc-17"></a>
     - **分析**：输入 "23"，第一层面对 'abc' (2)，第二层面对 'def' (3)。
     - **逻辑**：`start_index` 在这里代表的是“输入数字字符串的第几位”。
 
