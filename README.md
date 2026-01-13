@@ -57,6 +57,14 @@
 | 47 | 17 | [电话号码的字母组合](#lc-17) | 🔥 | 🟡 中等 | 回溯 (层级映射) | 映射回溯 |
 | 48 | 51 | [N 皇后](#lc-51) | | 🔴 困难 | 回溯 | 回溯 |
 | 49 | 22 | [括号生成](#lc-22) | 🔥 | 🟡 中等 | 回溯 | 回溯 |
+| 50      | 206          | [反转链表](#lc-206) | 🔥           | 🟢 简单   | 迭代 / 递归           | 结构修改 (反转)       |
+| 51      | 21           | [合并两个有序链表](#lc-21) | 🔥           | 🟢 简单   | 双指针 + 哨兵         | 合并逻辑              |
+| 52      | 160          | [相交链表](#lc-160) | 🔥           | 🟢 简单   | 双指针 (A+B路径)      | **双指针 (路径拼接)** |
+| 53      | 141          | [环形链表](#lc-141) | 🔥           | 🟢 简单   | 快慢指针 (Floyd 判圈) | 快慢指针              |
+| 54      | 142          | [环形链表 II](#lc-142) | 🔥           | 🟡 中等   | 快慢指针 (数学推导)   | **快慢指针**          |
+| 55      | 19           | [删除链表的倒数...](#lc-19) | 🔥           | 🟡 中等   | 快慢指针 (固定间距)   | 快慢指针              |
+| 56      | 25           | [K 个一组翻转链表](#lc-25) | 🔥           | 🔴 困难   | 分组迭代 / 递归       | 结构修改 (进阶)       |
+| 5欧修改7 | 92 | [反转链表II](#lc-92) |  | 🟡 中等 | 双指针结构变形 | 结构修改（反转） |
 
 ---
 
@@ -156,7 +164,7 @@
 
       ```python
       from collections import Counter
-      # 1
+      # 1 双counter
       def minWindow(s: str, t: str) -> str:
           if t == "" or s == "" or len(t) > len(s):
               return ""
@@ -526,7 +534,8 @@ def slidingWindow(s):
 
   - 关键词：**“区间”、“重叠”、“合并”、“会议室安排”**。
 
-  
+
+---
 
 ## 模块二：空间权衡优化 (Space-Time Trade-off)
 
@@ -606,7 +615,7 @@ def subarraySum(nums, k):
     return ans
 ```
 
-
+---
 
 ## 模块三：数据结构驱动的线性优化 (容器驱动)
 
@@ -618,8 +627,6 @@ def subarraySum(nums, k):
 | 找**下一个/上一个**更大或更小      | **单调栈**   | 破坏单调性即弹出并记录答案   |
 | 确定以某点为高度的**最大扩散区间** | **单调栈**   | 同时找左右第一个比它小的边界 |
 | 维护**滑动窗口**内的最值           | **单调队列** | 弹出较小者 + 弹出过期者      |
-
-------
 
 ### 体系一：基础栈 (Basic Stack) —— “匹配与消除”
 
@@ -890,7 +897,7 @@ def subarraySum(nums, k):
   - 关键词：**“连续滑动窗口”、“区间最大/最小值”**。
   - 逻辑定位：它是对“体系一：滑动窗口”的补全。当窗口移动时需要快速获取最值，就用单调队列。
 
-
+---
 
 ## 模块四：对数时间优化  —— 二分查找
 
@@ -1261,7 +1268,7 @@ def searchMinimize(left, right):
     - **最优解是滑动窗口**。
     - **二分做法**：可以对“最长长度”进行二分。猜一个长度 `len`，检查数组中是否存在一个长度为 `len` 的子数组，其包含的 0 的个数不超过 `k`。复杂度 $O(N \log N)$，不如滑动窗口 $O(N)$。
 
-
+---
 
 ## 模块五：图论与搜索 (Graph Theory & Search)
 
@@ -1378,7 +1385,7 @@ def bfs(start_node, target_node):
 
 
 
-#### DFS vs BFS 核心对比图
+#### DFS vs BFS 核心对比表格
 
 为了方便记忆，我们可以做一个简单的对比：
 
@@ -1474,30 +1481,30 @@ def bfs(start_node, target_node):
 
     ```python
     def maxAreaOfIsland(self, grid: List[List[int]]) -> int:
-            r, c = len(grid), len(grid[0])
-            max_area = 0
+        r, c = len(grid), len(grid[0])
+        max_area = 0
     
-            def dfs(i, j, r, c, cur_area):
-                if 0 <= i < r and 0 <= j < c and grid[i][j] == 1:
-                    grid[i][j] = 0 # 沉没
-                    cur_area += 1
-                else:# 终止条件：返回当前面积
-                    return cur_area
-                
-                # dfs adjacent nodes
-                for pos_i, pos_j in [(-1,0),(1,0),(0,-1),(0,1)]:
-                    cur_area = dfs(i+pos_i, j+pos_j, r, c, cur_area)
+        def dfs(i, j, r, c, cur_area):
+            if 0 <= i < r and 0 <= j < c and grid[i][j] == 1:
+                grid[i][j] = 0 # 沉没
+                cur_area += 1
+            else:# 终止条件：返回当前面积
                 return cur_area
     
-            cur_area = 0
-            for i in range(r):
-                for j in range(c):
-                    if grid[i][j] == 1:
-                        cur_area = dfs(i, j, r, c, cur_area)
-                        max_area = max(max_area, cur_area)
-                        cur_area = 0
+            # dfs adjacent nodes
+            for pos_i, pos_j in [(-1,0),(1,0),(0,-1),(0,1)]:
+                cur_area = dfs(i+pos_i, j+pos_j, r, c, cur_area)
+            return cur_area
     
-            return max_area
+        cur_area = 0
+        for i in range(r):
+            for j in range(c):
+                if grid[i][j] == 1:
+                    cur_area = dfs(i, j, r, c, cur_area)
+                    max_area = max(max_area, cur_area)
+                    cur_area = 0
+    
+        return max_area
     ```
     
   - **994. 腐烂的橘子** (**多源** BFS) <a id="lc-994"></a>
@@ -1714,7 +1721,7 @@ def bfs(start_node, target_node):
     ```
   
 
-
+---
 
 ## 模块六：回溯算法 (Backtracking) —— “撤销的艺术”
 
@@ -1932,13 +1939,66 @@ def bfs(start_node, target_node):
     - **逻辑**：
 
       ```python
-      # i 是切割点，s[start_index : i+1] 是当前切出来的子串
-      for i in range(start_index, len(s)):
-          sub = s[start_index : i+1]
-          if is_palindrome(sub):
-              path.append(sub)    # 做选择
-              backtrack(i + 1)    # 递归剩下的部分
-              path.pop()          # 撤销选择
+      def partition(self, s: str) -> List[List[str]]:
+          path = []
+          res = []
+          n = len(s)
+      
+          def backtraces(i):
+              # 题目要求切割字串，则必须连续
+              # 又要求是回文, 判断回文是主要的
+      
+              # 终止条件
+              if i == n:
+                  res.append(path[:])
+                  return
+      
+              # 以当前下标i作为起点，迭代子串直到尾部
+              # 
+              for j in range(i, n):
+                  if s[i] == s[j]:# 剪枝
+                      # 切片当前子串
+                      sub = s[i:j+1]
+      
+                      # 判断回文
+                      if sub == sub[::-1]:
+                          # 如果是回文，加入当前子串，并在这个位置切一刀
+                          path.append(sub)
+                          # 递归到切割后的下一个位置，相当于起点变更到j+1
+                          backtraces(j+1)
+                          # 拿掉上一个添加的回文串，重新在i起点的下一个子串
+                          path.pop()
+      
+              return
+      
+          backtraces(0)
+          return res
+      
+      
+      # 更快的办法: 回溯 + memo
+      def partition(self, s: str) -> List[List[str]]:
+          n = len(s)
+      
+          @cache 
+          def dfs(i):
+              if i == n:
+                  return [[]]  # 返回由空列表组成的列表，表示找到一种基准情况
+      
+              ans = []
+              for j in range(i, n):
+                  # 先比对首尾字符，不相等则绝不可能是回文
+                  if s[i] == s[j]: 
+                      sub = s[i:j+1]
+                      if sub == sub[::-1]: # 切片检查
+                          # 获取当前回文子串的所有的切分结果
+                          suffix_partitions = dfs(j + 1)
+                          # 将所有后续的回文串拼接到sub后面
+                          for p in suffix_partitions:
+                              ans.append([sub] + p)
+              return ans
+      
+          return dfs(0)
+      
       ```
   
   - **22. 括号组合**<a id="lc-22"></a>
@@ -2008,7 +2068,7 @@ def bfs(start_node, target_node):
     - **分析**：输入 "23"，第一层面对 'abc' (2)，第二层面对 'def' (3)。
     - **逻辑**：`start_index` 在这里代表的是“输入数字字符串的第几位”。
 
-
+---
 
 ## 模块七：动态规划 (Dynamic Programming) —— “状态转移”
 
@@ -2208,6 +2268,8 @@ def bfs(start_node, target_node):
     - **题目**：网格中有数字，求路径数字之和最小。
     - **方程**：$dp[i][j] = \min(dp[i-1][j], dp[i][j-1]) + grid[i][j]$。
 
+
+
 ### 体系三：背包与零钱 (Knapsack) —— “组合最值” 
 
 这是面试中最常见的“完全背包”模型。
@@ -2218,6 +2280,8 @@ def bfs(start_node, target_node):
     - **状态**：$dp[i]$ 表示金额为 $i$ 时最少需要的硬币数。
     - **方程**：$dp[i] = \min(dp[i], dp[i - \text{coin}] + 1)$。对于每一个硬币面额，我都可以尝试选它，然后加上“剩下的金额所需的最少硬币数”。
 
+
+
 ### 体系四：序列/字符串 DP —— “回文与公共子串”
 
 - **包含题目**：
@@ -2225,3 +2289,173 @@ def bfs(start_node, target_node):
     - **状态**：$dp[i][j]$ 表示子串 $s[i..j]$ 是否是回文串。
     - **方程**：$dp[i][j] = (s[i] == s[j]) \text{ and } dp[i+1][j-1]$。
     - **注**：此题也可以用“中心扩散法”解决，空间更省。
+
+---
+
+## 模块八：链表 (Linked List) 
+
+**核心思路**：
+
+1. **哨兵节点 (Dummy Node)**：只要头节点可能发生变化（如删除头节点、合并链表），无脑使用 Dummy 节点指向 head，最后返回 `dummy.next`。
+2. **双指针 (Two Pointers)**：
+   - **快慢指针**：解决环、中点、倒数第 N 个节点问题。
+   - **合并指针**：类似归并排序的 merge 过程。
+3. **断链与重连**：操作 `next` 指针时，务必先用临时变量 `temp` 保存下一个节点，防止链表断裂丢失。
+
+### 体系一：结构修改 (Reversal) 
+
+这一类题目的核心是**修改 `next` 指针的方向**。
+
+- **包含题目**：
+
+  - **206. 反转链表** (Hot 100) <a id="lc-206"></a>
+
+    - **分析**：链表基本功。虽然有递归写法，但**迭代法**是必须掌握的肌肉记忆。
+
+    - **模板**：
+
+      ```python
+      # Definition for singly-linked list.
+      # class ListNode:
+      #     def __init__(self, val=0, next=None):
+      #         self.val = val
+      #         self.next = next
+      class Solution:
+          def reverseList(self, head: Optional[ListNode]) -> Optional[ListNode]:
+          # prev: 指向“已经反转好的链表”的头节点（初始化为 None）
+          # curr: 指向“当前正在处理”的节点
+          prev, curr = None, head
+      
+          while curr:
+              # 记录当前节点在原链表中的下一个节点地址
+              # 如果不存，原链表的后续部分就丢失了
+              temp = curr.next
+      
+              # 正式开始反转
+              # 将当前节点的 next 指针指向 prev
+              # 这一步实现了当前节点与原后继节点的断开，并指向了新前驱节点
+              curr.next = prev 
+      
+              # prev 指针向后移动一位，现在的 curr 变成了下一轮的 prev
+              prev = curr
+      
+              # curr 指针跳转到保存的 temp 位置，准备处理原链表的下一个节点
+              curr = temp
+      
+          # 循环结束时，curr 指向 None，prev 指向原链表的最后一个节点
+          return prev
+      ```
+
+  - **92. 反转链表 II** <a id="lc-92"></a>
+
+    - 分析：部分修改链表内容，还可以借鉴206题的思路
+
+    - 核心逻辑：
+
+      1. 注意结束后，把反转的链表的首尾与原链表pre和tail连接。
+      2. 要引入哨兵节点，否则当反转的左节点 是节点1 本身的时候，它会找不到pre前节点，导致后面无法进行。
+
+      2. 还有一个要注意的是尾部的赋值涉及到python变量的赋值问题。节点可以看作是对象（object）是被永久分配地址的，但是变量诸如tail和curr则会和当前被分配的对象的变化情况保持一致，具体可以看下面代码中对tail的注释。
+
+    ```python
+    def reverseBetween(self, head: Optional[ListNode], left: int, right: int) -> Optional[ListNode]:
+        # 直接剪枝
+        if not head or left == right:
+            return head
+        # 用哨兵节点，否则处理不了 left=1
+        dummy = ListNode(0, head)
+        pre = dummy # pre 是left节点的前节点
+        n = right - left
+    
+        for _ in range(left-1):
+            pre = pre.next
+    
+        prev, curr = None, pre.next # curr指向left节点
+        # tail锁定现节点，也是反转后的链表尾节点
+        # 这里tail指向和curr一样的对象的地址（left节点），
+        # 只要节点变了它也会变（区分curr和left节点）
+        tail = curr
+    
+        # 这里需要循环n+1次，因为left到right共有right-left+1个节点
+        for _ in range(n+1):
+            temp = curr.next
+            # 此时 tail和curr依然指向相同的left节点，所以
+            # tail也会在这里做一次改变。但只做一次，原因看下一条注释
+            curr.next = prev
+            prev = curr
+            # 注意，这个时候curr要和原来的left节点，tail节点脱钩
+            # 所以以后curr的变化不会引起tail变化
+            curr = temp
+    
+        # 把两端的节点接回反转后的链表
+        tail.next = curr
+        pre.next = prev
+    
+        return dummy.next
+    ```
+
+  - **25. K 个一组翻转链表** (Hot 100)<a id="lc-25"></a>
+
+    - **分析**：链表题的**终极 Boss** (Hard)。它是 LC 206 的进阶版。
+    - **核心逻辑**：
+      1. **分组**：先判断剩余节点够不够 K 个，不够直接返回。
+      2. **子反转**：编写一个 `reverse(head, tail)` 辅助函数。
+      3. **拼接**：利用 `prev` 和 `next` 指针把反转后的子链表重新接回主链表。
+    - **技巧**：这道题递归写法比迭代写法好写很多，面试如果没限制空间复杂度，优先用递归。
+
+  - **160. 相交链表 (Intersection of Two Linked Lists)**<a id="lc-160"></a>
+
+    - **推荐理由**：如何在 $O(1)$ 空间下找到两个链表的交点
+    - **核心逻辑**：
+      - **问题**：链表 A 长度为 $a$，链表 B 长度为 $b$，公共部分长度为 $c$。
+      - **难点**：$a$ 和 $b$ 不一样长，两个指针同时走，永远不会在交点相遇。
+      - **技巧**：
+        - 指针 A 走完链表 A 后，转而去走链表 B。
+        - 指针 B 走完链表 B 后，转而去走链表 A。
+
+
+
+### 体系二：快慢指针 (Fast & Slow) 
+
+利用两个指针移动速度或启动时间的差异，来解决位置查找问题。
+
+- **包含题目**：
+
+  - **141. 环形链表**  <a id="lc-141">
+
+    - **分析**：判断链表是否有环。
+
+    - **口诀**：快指针走两步，慢指针走一步。如果有环，两人必会在环内相遇（套圈）。
+
+      ```
+      while fast and fast.next:
+          slow = slow.next
+          fast = fast.next.next
+          if slow == fast: return True
+      ```
+
+  - **142. 环形链表 II (Linked List Cycle II)** <a id="lc-142"></a>
+
+    - **分析**：它是 141 题的**必然延伸**。面试中，面试官问完“有没有环”之后，99% 会紧接着问“环的入口在哪”。
+    - **核心逻辑**：
+      - **阶段一 (判断环)**：和 141 一样，快慢指针相遇，说明有环。
+      - **阶段二 (找入口)**：这是一个纯数学推导结论。
+        - 假设从头到入口距离为 $x$，环入口到相遇点距离为 $y$，相遇点回入口距离为 $z$。
+        - 推导结果是：**$x = z$**（在简化情况下）。
+
+  - **19. 删除链表的倒数第 N 个结点** </a><a id="lc-19"></a>
+
+    - **分析**：经典面试题。如何只遍历一次找到倒数第 N 个？
+    - **技巧**：**固定窗口**。让 `fast` 先走 `N` 步，然后 `fast` 和 `slow` 同时走。当 `fast` 走到尽头（None）时，`slow` 刚好站在倒数第 `N` 个节点的前一个位置（前提是有哨兵节点）。
+    - **注意**：必须使用 **哨兵节点**，因为如果要删除的是头节点（倒数第 length 个），没有哨兵会很难处理。
+
+
+
+### 体系三：合并逻辑 (Merging) 
+
+- **包含题目**：
+  - **21. 合并两个有序链表** (Hot 100) <a id="lc-21"></a>
+    - **分析**：归并排序的最后一步。
+    - **核心**：谁小移谁。
+    - **哨兵**：使用 `dummy` 节点作为新链表的头，可以避免初始化 `head` 的繁琐判断。
+    - **收尾**：循环结束后，如果还有一个链表没走完，直接把剩下的接在后面（`cur.next = l1 if l1 else l2`）。
