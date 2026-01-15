@@ -2406,14 +2406,46 @@ def bfs(start_node, target_node):
   - **160. 相交链表 (Intersection of Two Linked Lists)**<a id="lc-160"></a>
 
     - **推荐理由**：如何在 $O(1)$ 空间下找到两个链表的交点
+    
     - **核心逻辑**：
       - **问题**：链表 A 长度为 $a$，链表 B 长度为 $b$，公共部分长度为 $c$。
       - **难点**：$a$ 和 $b$ 不一样长，两个指针同时走，永远不会在交点相遇。
       - **技巧**：
         - 指针 A 走完链表 A 后，转而去走链表 B。
         - 指针 B 走完链表 B 后，转而去走链表 A。
-
-
+      
+      ```python
+      def getIntersectionNode(self, headA: ListNode, headB: ListNode) -> Optional[ListNode]:
+          # 双指针
+          ptr1, ptr2 = headA, headB
+      
+          while ptr1 != ptr2:
+              # 指针 A 走完链表 A 后，转而去走链表 B
+              ptr1 = ptr1.next if ptr1 else headB
+              # 同时，指针 B 走完链表 B 后，转而去走链表 A
+              ptr2 = ptr2.next if ptr2 else headA
+              # 他们会相遇在相交的地方
+              # 因为此时他们第一次走了<相同的路程>
+              # 如果没有相交，会停在重点（1，2都完整遍历了headA和headB）
+      
+          return ptr1
+      
+      # 或者使用更简单的哈希算法
+      def getIntersectionNode(self, headA: ListNode, headB: ListNode) -> Optional[ListNode]:
+          visited = set()
+          temp = headA
+          while temp:
+              visited.add(temp)
+              temp = temp.next
+              
+          temp = headB
+          while temp:
+              if temp in visited:
+                  return temp
+              temp = temp.next
+              
+          return None
+      ```
 
 ### 体系二：快慢指针 (Fast & Slow) 
 
@@ -2427,24 +2459,81 @@ def bfs(start_node, target_node):
 
     - **口诀**：快指针走两步，慢指针走一步。如果有环，两人必会在环内相遇（套圈）。
 
+      ```python
+      def hasCycle(self, head: Optional[ListNode]) -> bool:
+          # 快慢指针都从头开始
+          slow = fast = head
+      
+          # 只需要检查快指针能否继续走（慢指针一定在快指针后面，不需要检查）
+          while fast and fast.next:
+              slow = slow.next
+              fast = fast.next.next
+      
+              # 追击相遇
+              if slow == fast:
+                  return True
+          # 出循环说明指向None，无环
+          return False
       ```
-      while fast and fast.next:
-          slow = slow.next
-          fast = fast.next.next
-          if slow == fast: return True
-      ```
-
+  
   - **142. 环形链表 II (Linked List Cycle II)** <a id="lc-142"></a>
-
-    - **分析**：它是 141 题的**必然延伸**。面试中，面试官问完“有没有环”之后，99% 会紧接着问“环的入口在哪”。
+  
+    - **分析**：它是 141 题的**必然延伸**。面试中，面试官问完“有没有环”之后，99% 会紧接着问“环的入口在哪”。我们可以简单使用哈希表，也可以直接
+  
     - **核心逻辑**：
+      
       - **阶段一 (判断环)**：和 141 一样，快慢指针相遇，说明有环。
-      - **阶段二 (找入口)**：这是一个纯数学推导结论。
-        - 假设从头到入口距离为 $x$，环入口到相遇点距离为 $y$，相遇点回入口距离为 $z$。
-        - 推导结果是：**$x = z$**（在简化情况下）。
-
+      
+      - **阶段二 (找入口)**：这是一个纯数学推导结论。以下来自官方题解：
+        
+        - 设链表中环外部分的长度为 a。slow 指针进入环后，又走了 b 的距离与 fast 相遇。从相遇点到入环点的前向距离为c。此时，fast 指针已经走完了环的 n 圈，因此它走过的总距离为 `a+n(b+c)+b=a+(n+1)b+nc`；
+        
+        - 据题意，任意时刻，fast 指针走过的距离都为 slow 指针的 2 倍。因此，我们有:
+        
+          `a+(n+1)b+nc=2(a+b)⟹a=c+(n−1)(b+c)`
+          有了 `a=c+(n−1)(b+c)` 的等量关系，我们会发现：从相遇点到入环点的距离(c)加上 n−1 圈的环长(b+c)，恰好等于从链表头部到入环点的距离。
+        
+        - 因此，当发现 slow 与 fast 相遇时，我们再额外使用一个指针 ptr。起始，它指向链表头部；随后，它和 slow 每次向后移动一个位置。最终，它们会在入环点相遇。 此时ptr走了a，slow又走了c + (n-1)圈。
+      
+      ```python
+      # 加一个哈希表来记录
+      def detectCycle(self, head: Optional[ListNode]) -> Optional[ListNode]:
+          visited = set()
+          node = head
+          while node:
+              if node in visited:
+                  return node
+              else:
+                  visited.add(node)
+              node = node.next
+          return None
+      
+      # 纯快慢指针数学推导法
+      def detectCycle(self, head: Optional[ListNode]) -> Optional[ListNode]:
+          # 快慢指针都从头开始
+          slow = fast = head
+      
+          while fast and fast.next:
+              slow = slow.next
+              fast = fast.next.next
+      
+              if slow == fast:
+                  # 设置新指针，走a
+                  ptr = head
+                  while ptr != slow:
+                      ptr = ptr.next
+                      # slow走c + (n-1)圈
+                      slow = slow.next
+                  # 在环入口相遇
+                  return ptr
+      
+          return None
+      ```
+      
+      
+  
   - **19. 删除链表的倒数第 N 个结点** </a><a id="lc-19"></a>
-
+  
     - **分析**：经典面试题。如何只遍历一次找到倒数第 N 个？
     - **技巧**：**固定窗口**。让 `fast` 先走 `N` 步，然后 `fast` 和 `slow` 同时走。当 `fast` 走到尽头（None）时，`slow` 刚好站在倒数第 `N` 个节点的前一个位置（前提是有哨兵节点）。
     - **注意**：必须使用 **哨兵节点**，因为如果要删除的是头节点（倒数第 length 个），没有哨兵会很难处理。
