@@ -2322,9 +2322,13 @@ def bfs(start_node, target_node):
       #         self.next = next
       class Solution:
           def reverseList(self, head: Optional[ListNode]) -> Optional[ListNode]:
-          # prev: 指向“已经反转好的链表”的头节点（初始化为 None）
-          # curr: 指向“当前正在处理”的节点
+          # prev: 前一节点（起始为原链表尾节点下一个None）， 
+          # curr: 当前节点（起始为原链表头节点）
           prev, curr = None, head
+          # 从定义上看，循环结束时，curr 指针一定会比 prev 多走一步。
+          # 因为 curr 的在完成一轮循环后是“待处理的下一个节点”，而 prev 的定义是“已处理完的那个节点”。所以，在循环结束时：
+          # prev: 指向“已经反转好的链表”的头节点
+          # curr: 指向“已经反转好的链表”的尾节点的下一个（None）
       
           while curr:
               # 记录当前节点在原链表中的下一个节点地址
@@ -2349,14 +2353,14 @@ def bfs(start_node, target_node):
   - **92. 反转链表 II** <a id="lc-92"></a>
 
     - 分析：部分修改链表内容，还可以借鉴206题的思路
-
+  
     - 核心逻辑：
-
+  
       1. 注意结束后，把反转的链表的首尾与原链表pre和tail连接。
       2. 要引入哨兵节点，否则当反转的左节点 是节点1 本身的时候，它会找不到pre前节点，导致后面无法进行。
-
+  
       2. 还有一个要注意的是尾部的赋值涉及到python变量的赋值问题。节点可以看作是对象（object）是被永久分配地址的，但是变量诸如tail和curr则会和当前被分配的对象的变化情况保持一致，具体可以看下面代码中对tail的注释。
-
+  
     ```python
     def reverseBetween(self, head: Optional[ListNode], left: int, right: int) -> Optional[ListNode]:
         # 直接剪枝
@@ -2393,18 +2397,61 @@ def bfs(start_node, target_node):
     
         return dummy.next
     ```
-
+  
   - **25. K 个一组翻转链表** (Hot 100)<a id="lc-25"></a>
-
+  
     - **分析**：链表题的**终极 Boss** (Hard)。它是 LC 206 的进阶版。
+  
     - **核心逻辑**：
+      
       1. **分组**：先判断剩余节点够不够 K 个，不够直接返回。
       2. **子反转**：编写一个 `reverse(head, tail)` 辅助函数。
       3. **拼接**：利用 `prev` 和 `next` 指针把反转后的子链表重新接回主链表。
+      
     - **技巧**：这道题递归写法比迭代写法好写很多，面试如果没限制空间复杂度，优先用递归。
-
+  
+      ```python
+      def reverseKGroup(self, head: Optional[ListNode], k: int) -> Optional[ListNode]:
+          dummy = ListNode(0, head)
+          pre_group_node = dummy
+          next_group_node = None
+      
+          while True:
+              kth = pre_group_node
+              # 遍历当前截断组是否有k个节点
+              for _ in range(k):
+                  kth = kth.next
+                  if kth == None:
+                      # 不满足k个，直接返回就行
+                      # 本身pre_group_node就是接在dummy上的
+                      return dummy.next
+      
+              # 下一个组的开头
+              next_group_node = kth.next
+              # 当前组头节点， 上一组的下一个
+              cur_group_start = pre_group_node.next
+      
+              # 让 prev 初始化为，这样反转完，新尾巴自动就连上了下一组
+              prev = next_group_node # 指向当前组尾节点的下一个
+              curr = cur_group_start # 指向当前组头节点
+      
+              for _ in range(k):
+                  temp = curr.next
+                  curr.next = prev
+                  prev = curr
+                  curr = temp
+      
+              # 把前一组的尾巴，连上本组的新头
+              pre_group_node.next = prev
+      
+              # 迭代 pre_group_node向前
+              pre_group_node = cur_group_start
+      
+          return dummy.next
+      ```
+  
   - **160. 相交链表 (Intersection of Two Linked Lists)**<a id="lc-160"></a>
-
+  
     - **推荐理由**：如何在 $O(1)$ 空间下找到两个链表的交点
     
     - **核心逻辑**：
@@ -2597,8 +2644,6 @@ def bfs(start_node, target_node):
               count += 1
               last_node = node
               node = node.next
-              # print()
-              # print(count, node)
       
           if last_node:
               if node.next:# pop的不是最后一个节点
@@ -2611,18 +2656,44 @@ def bfs(start_node, target_node):
               return last_node # pop以后链表为空
       
           return head
-      
       ```
-    
       
-
-
 
 ### 体系三：合并逻辑 (Merging) 
 
 - **包含题目**：
   - **21. 合并两个有序链表** (Hot 100) <a id="lc-21"></a>
+    
     - **分析**：归并排序的最后一步。
     - **核心**：谁小移谁。
     - **哨兵**：使用 `dummy` 节点作为新链表的头，可以避免初始化 `head` 的繁琐判断。
     - **收尾**：循环结束后，如果还有一个链表没走完，直接把剩下的接在后面（`cur.next = l1 if l1 else l2`）。
+    
+    ```python
+    def mergeTwoLists(self, list1: Optional[ListNode], list2: Optional[ListNode]) -> Optional[ListNode]:
+        if list1 == None:
+            return list2
+        elif list2 == None:
+            return list1
+    
+        dummy = ListNode(0)
+        node = dummy
+    
+        while list1 and list2:
+            if list1.val <= list2.val:
+                node.next = list1
+                list1 = list1.next
+            else:
+                node.next = list2
+                list2 = list2.next
+    
+            node = node.next
+    
+        if list1 == None:
+            node.next = list2
+    
+        if list2 == None:
+            node.next = list1
+    
+        return dummy.next
+    ```
