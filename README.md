@@ -2529,14 +2529,92 @@ def bfs(start_node, target_node):
       
           return None
       ```
-      
-      
   
   - **19. 删除链表的倒数第 N 个结点** </a><a id="lc-19"></a>
   
     - **分析**：经典面试题。如何只遍历一次找到倒数第 N 个？
+    
     - **技巧**：**固定窗口**。让 `fast` 先走 `N` 步，然后 `fast` 和 `slow` 同时走。当 `fast` 走到尽头（None）时，`slow` 刚好站在倒数第 `N` 个节点的前一个位置（前提是有哨兵节点）。
+    
     - **注意**：必须使用 **哨兵节点**，因为如果要删除的是头节点（倒数第 length 个），没有哨兵会很难处理。
+    
+      ```python
+      def removeNthFromEnd(self, head: Optional[ListNode], n: int) -> Optional[ListNode]:
+          if head == None:
+              return head 
+      
+          table_s = 0
+          node = head
+          # 找到链表size
+          while node and node.next:
+              table_s += 1
+              node = node.next
+      
+          # 放置哨兵
+          # 防止被弹出的是第一个node而找不到前节点
+          # 哨兵可以保证任何链表中的node都有前节点以统一逻辑
+          dummy = ListNode(0, head)
+          count = 0
+          node = dummy
+          while count <= table_s - n:
+              # 找到切断处链表
+              count += 1
+              node = node.next
+      
+          node.next = node.next.next
+          return dummy.next
+      
+      # 快慢指针
+      def removeNthFromEnd(self, head: Optional[ListNode], n: int) -> Optional[ListNode]: # 如上解释
+          dummy = ListNode(0, head)
+          slow = fast = dummy
+      
+          for _ in range(n):
+              fast = fast.next
+      
+          while fast and fast.next:
+              slow = slow.next
+              fast = fast.next
+      
+          slow.next = slow.next.next
+          return dummy.next
+      
+      # 不加哨兵的话，要判断很多边界情况
+      def removeNthFromEnd(self, head: Optional[ListNode], n: int) -> Optional[ListNode]:
+          if head == None:
+              return head 
+      
+          table_s = 0
+          node = head
+          while node and node.next:
+              table_s += 1
+              node = node.next
+      
+          count = 0
+          node = head
+          last_node = None
+          while count <= table_s - n:
+              count += 1
+              last_node = node
+              node = node.next
+              # print()
+              # print(count, node)
+      
+          if last_node:
+              if node.next:# pop的不是最后一个节点
+                  last_node.next = node.next
+              else: # pop的是最后一个节点
+                  last_node.next = None
+          elif head and head.next:
+              head = head.next # pop的是第一个节点
+          else:
+              return last_node # pop以后链表为空
+      
+          return head
+      
+      ```
+    
+      
 
 
 
