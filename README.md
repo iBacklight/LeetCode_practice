@@ -64,7 +64,14 @@
 | 54      | 142          | [环形链表 II](#lc-142) | 🔥           | 🟡 中等   | 快慢指针 (数学推导)   | **快慢指针**          |
 | 55      | 19           | [删除链表的倒数...](#lc-19) | 🔥           | 🟡 中等   | 快慢指针 (固定间距)   | 快慢指针              |
 | 56      | 25           | [K 个一组翻转链表](#lc-25) | 🔥           | 🔴 困难   | 分组迭代 / 递归       | 结构修改 (进阶)       |
-| 5欧修改7 | 92 | [反转链表II](#lc-92) |  | 🟡 中等 | 双指针结构变形 | 结构修改（反转） |
+| 57 | 92 | [反转链表II](#lc-92) |  | 🟡 中等 | 双指针结构变形 | 结构修改（反转） |
+| 58 | 146 | [LRU缓存](#lc-146) | 🔥 | 🟡 中等 | 哈希双向链表 | 链表系统设计 |
+| 59 | 98| [验证二叉搜索树](#lc-98) | 🔥 | 🟡 中等 | 中序遍历 / 递归边界   | 二叉树-属性      |
+| 60 | 102| [二叉树的层序遍历](#lc-102) | 🔥 | 🟡 中等 | BFS (队列)            | 二叉树-遍历      |
+| 61 | 104| [二叉树的最大深度](#lc-104) | 🔥 | 🟢 简单 | DFS / BFS             | 二叉树-属性      |
+| 62 | 236| [最近公共祖先](#lc-236) | 🔥 | 🟡 中等 | DFS (后序)            | 二叉树-祖先/路径 |
+| 63 | 124| [二叉树中最大路径和](#lc-124) | 🔥 | 🔴 困难 | DFS (后序) + 全局最大 | 二叉树-祖先/路径 |
+| 64 | 94 | 二叉树中序遍历 | 🔥 |  |  |  |
 
 ---
 
@@ -2322,7 +2329,7 @@ def bfs(start_node, target_node):
       #         self.next = next
       class Solution:
           def reverseList(self, head: Optional[ListNode]) -> Optional[ListNode]:
-          # prev: 前一节点（起始为原链表尾节点下一个None）， 
+          # prev: 前一节点（起始为原链表尾节点下一个，这里是None）， 
           # curr: 当前节点（起始为原链表头节点）
           prev, curr = None, head
           # 从定义上看，循环结束时，curr 指针一定会比 prev 多走一步。
@@ -2432,6 +2439,8 @@ def bfs(start_node, target_node):
               cur_group_start = pre_group_node.next
       
               # 让 prev 初始化为，这样反转完，新尾巴自动就连上了下一组
+              # eg:a->b->c，一开始设prev=c,curr=a,那么就是先把a
+      		# 接到c上再翻转为b->a，这里由于a已经接到c了，无需额外操作
               prev = next_group_node # 指向当前组尾节点的下一个
               curr = cur_group_start # 指向当前组头节点
       
@@ -2697,3 +2706,166 @@ def bfs(start_node, target_node):
     
         return dummy.next
     ```
+
+### 体系四：“哈希链表 (Hash-Linked List)，system design
+
+这一体系的核心不再是单纯的“怎么走指针”，而是**“如何利用双向链表的特性，配合哈希表实现 $O(1)$ 的复杂操作”**。哈希表负责o1检索节点，双向链表负责o1移动节点。
+
+**核心口诀**：
+
+1. **双哨兵**：`head` 和 `tail` 互指，防止**空指针**。
+2. **拆解动作**：把“移动”拆解为“先删除，再插入”。
+3. **双向同步**：链表和哈希表要同时改动。
+
+- **包含题目**：
+
+  - **146. LRU 缓存** (Hot 100) 。这题是 codeTop 总榜第二的含金量，非常重要<a id="lc-146"></a>
+
+    ```python
+    class node:
+        def __init__(self, key=0, val=0 ):
+            # 当缓存满了，我们需要删除链表最前面的那个节点（最久未使用的）。
+            # 删除后，我们还得去哈希表里把对应的 key 也删掉。
+            # 如果 Node 里只有 value，就不知道该去哈希表里删哪个key。
+            self.key = key
+            self.val = val
+            self.next = None
+            self.prev = None
+    
+    class LRUCache:
+        # 双向链表 + hash 保证 O(1)
+        def __init__(self, capacity: int):
+            # 注意：hash的value是node而不是题目中给的数值value
+            self.hash = {} # 内容： key -> Node
+            self.head = node() # dummy head，形成上界
+            self.tail = node() # dummy tail，形成下界
+            self.cap = capacity
+    
+            self.head.next = self.tail
+            self.tail.prev = self.head
+    
+        # 从链表中删除一个节点, 双向均要考虑
+        def remove_node(self, node):
+            node.prev.next = node.next
+            node.next.prev = node.prev
+    
+        # 把节点插到 tail.prev 和 tail 之间，因为tail是None
+        def add_to_tail(self, node):
+            # 注意：要更新两头，既要更新node，也要更新tail
+            node.prev = self.tail.prev
+            node.next = self.tail
+            
+            self.tail.prev.next = node # 原本的倒数第一指向新节点
+            self.tail.prev = node      # tail 指向新节点
+    
+        def move_to_end(self, node):
+            self.remove_node(node)
+            self.add_to_tail(node)
+    
+        def get(self, key: int) -> int:
+            if key in self.hash:
+                # 读取也要更新链表
+                cur_node = self.hash[key]
+                self.move_to_end(cur_node)
+                return cur_node.val
+            else:
+                return -1
+    
+        def put(self, key: int, value: int) -> None:
+            if key in self.hash:
+                cur_node = self.hash[key]
+                cur_node.val = value # 更新数值
+                # 更新链表
+                self.move_to_end(cur_node)
+            else:
+                if len(self.hash) == self.cap:
+                    # 清除头部, 即head.next
+                    cur_del_node = self.head.next
+                    self.remove_node(cur_del_node)
+                    # 这里用到了之前定义的key
+                    del self.hash[cur_del_node.key]
+                # 创建新node
+                cur_node = node(key, value)
+                self.hash[key] = cur_node
+                self.add_to_tail(cur_node)
+    
+    # Your LRUCache object will be instantiated and called as such:
+    # obj = LRUCache(capacity)
+    # param_1 = obj.get(key)
+    # obj.put(key,value)
+    ```
+
+---
+
+## 模块九：二叉树 (Binary Tree) / 递归
+
+**核心关键词**：`DFS` (递归/栈)、`BFS` (队列)、`自底向上` (后序)、`自顶向下` (前序)。 二叉树题目通常分为两类：一类是**遍历** (怎么走)，一类是**构造/路径** (怎么算)。
+
+```python
+# Definition for a binary tree node.
+class TreeNode:
+ 	def __init__(self, val=0, left=None, right=None):
+     	self.val = val
+     	self.left = left
+     	self.right = right
+```
+
+### 体系一：遍历与属性验证 (DFS/BFS)
+
+基础的树形结构操作。
+
+- **94. 二叉树中序遍历**
+
+  - DFS 搜索，先左再中再右
+
+    ```python
+    def inorderTraversal(self, root: Optional[TreeNode]) -> List[int]:
+        res = []
+        if not root:
+            return res
+    
+        def dfs(node):
+            if node == None:
+                return
+            # 不需要判断，根本就是只添加一次
+            
+            dfs(node.left)
+            # 每次走到左边的头再return，记录中值，走右边
+            # 想像每次return都是这一次的头，每次都记录中值
+            res.append(node.val)
+            dfs(node.right)
+            return
+    
+        dfs(root)
+    
+        return res
+    
+    ```
+
+- **102. 二叉树的层序遍历** (Hot 100)
+
+  - **核心**：BFS (广度优先搜索)。
+  - **工具**：队列 (`Queue/Deque`)。每次处理一层，把子节点加入队列.
+
+- **104. 二叉树的最大深度** (Hot 100)
+  - **核心**：DFS (后序遍历)。
+  - **公式**：`MaxDepth = max(L, R) + 1`。也可以用层序遍历做。
+
+- **98. 验证二叉搜索树** (Hot 100)
+  - **核心**：**中序遍历** 或 **递归带上下界**。
+  - **坑点**：不能只判断 `left < root < right`，要保证**整个左子树**都小于 root。通常用中序遍历（结果必须是升序数组）最简单。
+
+### 体系二：公共祖先与路径 (自底向上思维)
+
+这类题目通常较难，需要利用**后序遍历**（左右根）的特性，从叶子节点向上传递信息。
+
+- **236. 二叉树的最近公共祖先 (LCA)** (Hot 100)
+  - **核心**：**后序遍历 + 状态传递**。
+  - **逻辑**：
+    1. 如果当前节点是 p 或 q，返回当前节点。
+    2. 如果左搜到了且右搜到了，当前节点就是 LCA。
+    3. 如果只搜到一边，返回那一边。
+- **124. 二叉树中的最大路径和** (Hot 100, Hard)
+  - **核心**：**后序遍历 + 全局变量更新**。
+  - **难点**：区分“**能贡献给父节点的路径**”（只能选一条边）和“**当前子树内部的最大路径**”（可以是个倒V型）。
+  - **公式**：`return node.val + max(left, right, 0)`。
