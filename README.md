@@ -1462,7 +1462,6 @@ def bfs(start_node, target_node):
     
             while queue:
                 i, j = queue.popleft()
-    
                 for pos_i, pos_j in [(-1,0), (1,0), (0,-1), (0,1)]:
                     cur_i, cur_j = i + pos_i,  j + pos_j
     
@@ -1481,11 +1480,11 @@ def bfs(start_node, target_node):
     
         return island_count
     ```
-
+    
   - **[695. 岛屿的最大面积](https://leetcode.cn/problems/max-area-of-island/)** <a id="lc-695"></a>
-
+  
     - 与200类似，只增加了一个面积
-
+  
     ```python
     def maxAreaOfIsland(self, grid: List[List[int]]) -> int:
         r, c = len(grid), len(grid[0])
@@ -2837,21 +2836,82 @@ class TreeNode:
             return
     
         dfs(root)
-    
         return res
     
     ```
-
+  
 - **102. 二叉树的层序遍历** (Hot 100)
 
   - **核心**：BFS (广度优先搜索)。
-  - **工具**：队列 (`Queue/Deque`)。每次处理一层，把子节点加入队列.
+
+  - **工具**：队列 (`Queue/Deque`)。每次处理一层，把子节点加入队列。
+
+    ```python
+    def levelOrder(self, root: Optional[TreeNode]) -> List[List[int]]:
+        traverse = []
+        if root == None:
+            return traverse
+        
+        from collections import deque
+        # BFS 队列
+        queue = deque([root])
+    
+        while queue:
+            # 分层（每次循环相当于遍历一层）：结果加入当前节点 + 下一层入队
+            layer_res = []
+            # size 当前层宽度
+            size = len(queue)
+            for _ in range(size):
+                # 从当前层的第一个节点（最先入队的节点）开始遍历
+                node = queue.popleft()
+                # 层当前节点值加入当前结果
+                if node == None:
+                    continue
+                layer_res.append(node.val)
+    
+                # 开始将当前节点下的下一层入队
+                if node.left:
+                    queue.append(node.left)
+                if node.right:
+                    queue.append(node.right)
+            # 当前层遍历结束；添加当前层结果
+            traverse.append(layer_res)
+    
+        return traverse
+    ```
+
+    
 
 - **104. 二叉树的最大深度** (Hot 100)
+  
   - **核心**：DFS (后序遍历)。
-  - **公式**：`MaxDepth = max(L, R) + 1`。也可以用层序遍历做。
 
+  - **公式**：`MaxDepth = max(L, R) + 1`。也可以用层序遍历做。
+  
+    ```python
+    def maxDepth(self, root: Optional[TreeNode]) -> int:
+        max_len = 0
+    
+        def dfs(node, cur_len, max_len):
+            # terminated condition
+            if node == None:
+                # 遍历到树的尽头在比较
+                max_len = max(max_len, cur_len)
+                return max_len
+            # 只要不是None就+1
+            cur_len += 1
+            # 左右树的初始cur_len一样的
+            max_len = dfs(node.left, cur_len, max_len)
+            max_len = dfs(node.right, cur_len, max_len)
+    
+            return max_len
+    
+        max_len = dfs(root, 0, 0)
+        return max_len
+    ```
+  
 - **98. 验证二叉搜索树** (Hot 100)
+  
   - **核心**：**中序遍历** 或 **递归带上下界**。
   - **坑点**：不能只判断 `left < root < right`，要保证**整个左子树**都小于 root。通常用中序遍历（结果必须是升序数组）最简单。
 
