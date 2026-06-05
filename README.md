@@ -72,6 +72,7 @@
 | 62 | 236| [最近公共祖先](#lc-236) | 🔥 | 🟡 中等 | DFS (后序)            | 二叉树-祖先/路径 |
 | 63 | 124| [二叉树中最大路径和](#lc-124) | 🔥 | 🔴 困难 | DFS (后序) + 全局最大 | 二叉树-祖先/路径 |
 | 64 | 94 | 二叉树中序遍历 | 🔥 |  |  |  |
+| 65 | 128 | [最长连续序列](#lc-128) | 🔥 | 🟡 中等 | 哈希 | |
 
 ---
 
@@ -188,7 +189,7 @@
               # cnt_s >= cnt_t 的意思是：对于 cnt_t 中的每一个字符，cnt_s 中该字符的数量是否都大于等于 cnt_t 中的数量
               # 它不关心 cnt_s 里是否有 cnt_t 没有的字符（比如 cnt_s 有一堆 'z'，但 cnt_t 不需要 'z'，这不影响结果）。它只关心 cnt_t 需要的字符，cnt_s 是否足够。
                   if cur_r - cur_l < r -l:
-                      r, l = cur_r, cur_l
+                      r, l = cur_r, cur_l # 当前长度较小，交换指针
                   cnt_s[s[cur_l]] -= 1 # remove current left pointer
                   cur_l += 1 # left pointer move forward
           return s[l:r+1] if l >= 0 else ""
@@ -400,11 +401,45 @@ def slidingWindow(s):
                   r -= 1
       
           return volume
+      
+      # 还有一种横向比较，但是由于O(n^2)，所以不能通过所有case
+      def trap(self, height: List[int]) -> int:
+          vol = 0
+          # 分层
+          n_layers = max(height)
+      
+          for layer in range(n_layers):
+              # 寻找下一个齐平点
+              l = r = 0
+              while r < len(height) - 1:
+                  r += 1
+                  if height[r] >= layer+1 and l != r:
+                      if height[l] >= layer+1: # 保证l是当前层起点
+                          vol += r - l -1
+                      l = r
+      
+          return vol
       ```
     
-  - **1.两数之和** II（有序版， 有序数组求和）<a id="lc-1-ordered"></a>
+  - **1.两数之和** II（有序版， 有序数组求和）<a id="lc-167"></a>
   
     - 基础，双指针中心碰撞
+  
+      ```python
+      def twoSum(self, numbers: List[int], target: int) -> List[int]:
+          l , r = 0, len(numbers)-1
+      
+          while l < r:
+              if numbers[l] + numbers[r] > target:
+                  r -= 1
+              elif numbers[l] + numbers[r] < target:
+                  l += 1
+              else:
+                  return [l, r]
+          return []
+      ```
+  
+      
   
   - **15.三数之和**（有序数组求和）<a id="lc-15"></a>
   
@@ -412,29 +447,29 @@ def slidingWindow(s):
   
       ```python
       def threeSum_hash(nums: List[int]) -> List[List[int]]:
-              nums.sort()
-              n = len(nums)
-              res_set = set()
+          nums.sort()# sort使nums有序，才可以避免重复的三元组
+          n = len(nums)
+          res_set = set()
       
-              for i in range(n):
-                  # 提前去重：相同 i 值只做一次
-                  # 防止看到[-1, -1, 0, 1, 2, ...]，两次看到同样数字，产生同样结果
-                  # 前提是，已经排序，后面不会在该循环中看到相同数字
-                  if nums[i] > 0: # 排序后超过0不可能成为首位数
-                      break
-                  if i > 0 and nums[i] == nums[i-1]: 
-                      continue # 连续相等的数字不应该重复计算
+          for i in range(n):
+              # 提前去重：相同 i 值只做一次
+              # 防止看到[-1, -1, 0, 1, 2, ...]，两次看到同样数字，产生同样结果
+              # 前提是，已经排序，后面不会在该循环中看到相同数字
+              if nums[i] > 0: # 排序后超过0不可能成为首位数
+                  break
+              if i > 0 and nums[i] == nums[i-1]: 
+                  continue # 连续相等的数字不应该重复计算
       
-                  target = 0-nums[i] # 设nums[i]为首位数
-                  seen = set()  # 存已见到的数
-                  # transit to two sum
-                  for j in range(i+1, n):
-                      need = target - nums[j]
-                      if need in seen:
-                          res_set.add((nums[i], need, nums[j]))  # 三元组已按升序
-                      seen.add(nums[j])
+              target = 0-nums[i] # 设nums[i]为首位数
+              seen = set()  # 存已见到的数
+              # transit to two sum
+              for j in range(i+1, n):
+                  need = target - nums[j]
+                  if need in seen:
+                      res_set.add((nums[i], need, nums[j]))  # 三元组已按升序
+                  seen.add(nums[j])
       
-              return [list(t) for t in res_set]
+          return [list(t) for t in res_set]
       ```
   
       或者双指针：
@@ -533,6 +568,46 @@ def slidingWindow(s):
           return merged
       ```
 
+  - **189.轮转数组**<a id="lc-189"></a>
+
+    - ```python
+      # 数组交替
+      def rotate(self, nums: List[int], k: int) -> None:
+          """
+          Do not return anything, modify nums in-place instead.
+          """
+          n = len(nums)
+          k = k % n # 当k>n的时候，放弃多余轮转，和k<n的某k等价
+          # nums[:] = 后半部分 + 前半部分
+          # 注意不可以用k/k+1来划分边界，数组的总长 $n$ 是固定的。末尾拿走得越多（$k$ 越大），前面剩下的就越少（$n-k$ 越小）。它们两个是此消彼长的互补关系。
+          # $k+1$ 是随着 $k$ 的变大而变大的。$k$ 变大，$k+1$ 也变大，这和“前面剩下的元素变少”的客观规律刚好反过来了。
+          nums[:] = nums[n-k:] + nums[:n-k]
+          
+      # 嵌套列表反转
+      def rotate(self, nums: List[int], k: int) -> None:
+          """
+          Do not return anything, modify nums in-place instead.
+          """
+          n = len(nums)
+          k = k % n  # 必须要取模，防止 k 大于 n
+      
+          # 定义一个翻转子区间的辅助函数，双指针
+          def reverse(left: int, right: int) -> None:
+              while left < right:
+                  nums[left], nums[right] = nums[right], nums[left]
+                  left += 1
+                  right -= 1
+      
+          # 1. 翻转整个数组，已经反序，k和新数组对齐了，直接用k
+          reverse(0, n - 1)
+          # 2. 翻转前 k 个元素
+          reverse(0, k - 1)
+          # 3. 翻转后面剩下的元素
+          reverse(k, n - 1)
+      ```
+
+    - 
+
 - 核心逻辑：
 
   “先排序，后扫描”。也就是：只要涉及到区间重叠问题，第一步永远是按照区间的 Start Time 进行排序。
@@ -554,7 +629,7 @@ def slidingWindow(s):
 
   - **560. 和为 K 的子数组** (经典母题) <a id="lc-560"></a>
 
-    - 双指针/滑动窗口”只在所有元素非负时才成立（窗口右扩和左缩才能单调地让和增/减）。一旦有负数，窗口和不再单调，双指针会漏数或死循环。因此这题不能用双指针做对。
+    - 双指针/滑动窗口”只在所有元素非负时才成立（窗口右扩和左缩才能单调地让和增/减）。一旦有负数，窗口和不再单调，双指针会漏数或死循环。因此这题不能用双指针做。
 
       ```python
       def subarraySum(self, nums: List[int], k: int) -> int:
@@ -563,20 +638,67 @@ def slidingWindow(s):
           于是只需记录“历史上每个前缀和出现过多少次”，每次在 pre_sum 更新后，把 cnt[pre_sum - k] 加到答案里即可。
           """
           cnt = defaultdict(int)
-          cnt[0] = 1            # 前缀和为0在起点时出现一次（空前缀）
-          pre_sum = 0           # 当前前缀和
+          cnt[0] = 1 # 前缀和为0在起点时出现一次（空前缀）
+          pre_sum = 0  # 当前前缀和
           ans = 0
       
           for x in nums:
               pre_sum += x
-              ans += cnt[pre_sum - k]   # 以当前为右端点，能形成和为k的子数组数量
-              cnt[pre_sum] += 1         # 当前前缀和出现次数+1
+              ans += cnt[pre_sum - k]# 以当前为右端点，能形成和为k的子数组数量
+              # 这里取的是中间和为k的数组，pre_sum的
+              cnt[pre_sum] += 1 # 当前前缀和出现次数+1
       
           return ans
       ```
-
-  - **1. 两数之和** (虽然不是区间，但核心思想一致：`target - current` 是否存在) <a id="lc-1"></a>
-
+  
+  - **128.最长连续序列<a id="lc-128"></a>**
+  
+    - 给定一个未排序的整数数组 `nums` ，找出数字连续的最长序列（不要求序列元素在原数组中连续）的长度。请你设计并实现时间复杂度为 `O(n)` 的算法解决此问题。
+    
+    ```python
+    def longestConsecutive(self, nums: List[int]) -> int:
+        nums_set = set(nums)
+        max_len = 0
+        cur_len = 0
+    
+        for num in nums_set:       
+            if num -1 in nums_set:# 连续必须从第二个开始
+                cur_len = 2
+    
+                while num + 1 in nums_set:
+                    num += 1
+                    cur_len += 1
+    
+                max_len = max(max_len, cur_len)
+    
+        return max_len
+        
+    def longestConsecutive(self, nums: List[int]) -> int:
+        nums.sort()# 先排序
+    
+        max_len = 0
+        cur_len = 0
+        for i, num in enumerate(nums):
+             if i == 0:
+                 cur_len = 1
+                 continue
+             elif nums[i] - nums[i-1] == 1:
+                 cur_len += 1
+             elif nums[i] == nums[i-1]:
+                 continue
+             else:
+                 max_len = max(cur_len, max_len)
+                 cur_len = 1
+    
+         max_len = max(max_len, cur_len)
+         return max_len
+                
+    ```
+    
+    
+    
+  - **1.两数之和** (虽然不是区间，但核心思想一致：`target - current` 是否存在) <a id="lc-1"></a>
+  
     ```python
     def twoSum(nums, target:int):
         hashtable = dict()
@@ -915,9 +1037,7 @@ def subarraySum(nums, k):
 
 ### 核心难点攻克：二分区间与边界模板
 
-这是二分查找最容易写死循环的地方。为了统一记忆，我强烈建议使用 **“红蓝染色法”** 或 **“前闭后闭区间模板”**。
-
-这里为您推荐最通用、最不易出错的 **前闭后闭 `[left, right]` 模板**。
+这是二分查找最容易写死循环的地方。为了统一记忆，我强烈建议使用 **“红蓝染色法”** 或 **“前闭后闭区间模板”**。这里推荐最通用的 **前闭后闭 `[left, right]` 模板**。
 
 #### 1. 通用模板：前闭后闭 `[left, right]`
 
@@ -928,9 +1048,7 @@ def binarySearch(nums, target):
     left, right = 0, len(nums) - 1  # 1. 定义：[left, right] 都是闭区间
     
     while left <= right:            # 2. 终止条件：因为是闭区间，left == right 时区间内还有一个元素，必须继续检查，所以要有 =
-        
         mid = left + (right - left) // 2
-        
         if nums[mid] == target:
             return mid              # 找到直接返回
         elif nums[mid] < target:
@@ -1029,6 +1147,30 @@ def searchMinimize(left, right):
                       r = mid - 1  # target 不在这，去左边找（可能在右坡的前半段，也可能在左坡）
       
           return -1
+      
+      def search(self, nums: List[int], target: int) -> int:
+          # 也可以使用指针当作边界，本质上是一样的
+          # 指针一开始就是0和-1，根据mid的关系收缩以后，target也不可能掉落出指针之外的范围
+          l, r = 0, len(nums) - 1
+      
+          while l <= r:
+              mid = (l + r) // 2
+      
+              if nums[mid] == target:
+                  return mid
+      
+              if nums[l] <= nums[mid]:# left mono
+                  if nums[l] <= target <= nums[mid]:
+                      r = mid - 1
+                  else:
+                      l = mid + 1
+              else:
+                  if nums[mid] <= target <= nums[r]:
+                      l = mid + 1
+                  else:
+                      r = mid - 1
+      
+          return -1
       ```
 
   - 类似：162 寻找峰顶；153 寻找旋转排序数组中的最小值 <a id="lc-153"></a>
@@ -1050,17 +1192,17 @@ def searchMinimize(left, right):
     
         return nums[l]
     ```
-
+  
   - **34. 在排序数组中查找元素的第一个和最后一个位置** (边界查找) <a id="lc-34"></a>
-
+  
     - **难点**：数组中有重复元素（如 `[5,7,7,8,8,10]` 找 8），普通的二分找到一个 8 就会停止，但我们需要找边界。
-
+  
     - **逻辑**：
-
+  
       - **找左边界 (Lower Bound)**：找到 `mid` 等于 target 时，**不要停**，然后**继续向左收缩** (`right = mid - 1`)，看前面还有没有。
       - **找右边界 (Upper Bound)**：找到 `mid` 等于 target 时，**不要停**，然后**继续向右收缩** (`left = mid + 1`)。
       - 两种做法，都是分别计算上下bound，但是可以分别构建（1），或者采用技巧只构建一次搜索（2）
-
+  
       ```python
       #（1）
       def searchRange(self, nums: List[int], target: int)
@@ -1143,7 +1285,7 @@ def searchMinimize(left, right):
       
           return [start_idx, end_idx]
       ```
-
+  
   
   - **74.[搜索二维矩阵](https://leetcode.cn/problems/search-a-2d-matrix/)**(矩阵一维化) <a id="lc-74"></a>
   
@@ -1657,17 +1799,92 @@ def bfs(start_node, target_node):
                     cres_queue.append(cres)
     
         return total_cres == numCourses
+    
+    
+    # 当然还可以使用入度加DFS求解
+    def canFinish(self, numCourses: int, prerequisites: List[List[int]]) -> bool:
+        # Adj mat
+        adj = defaultdict(list)
+    
+        # indegree
+        indegree = defaultdict(int) # how many pre nned to be taken
+        res = 0
+    
+        for cres, pre in prerequisites:
+            adj[pre].append(cres)
+            indegree[cres] += 1
+    
+        self.num_cres_taken = 0
+    
+        def dfs(cres):
+            # all cres retrived is already clear to take
+            self.num_cres_taken += 1
+            # 标记已经入度的cres，这样外层循环检测 == 0 时就会直接跳过它，防止二次入栈
+            indegree[cres] = -1
+    
+            for cur_cres in adj[cres]:
+                indegree[cur_cres] -= 1
+                if indegree[cur_cres] == 0:#注意这里必须要是等于，不是等于则会无限循环
+                    dfs(cur_cres)
+    
+        for cres in range(numCourses):
+            if indegree[cres] == 0:
+                dfs(cres)
+    
+        return numCourses == self.num_cres_taken
     ```
   
   - **210. 课程表 II** (输出拓扑排序结果) <a id="lc-210"></a>
   
     - **逻辑**：和 207 完全一样，只不过需要用一个列表 `res` 记录每次 `pop` 出来的课程顺序。
+    
+    ```python
+    def findOrder(self, numCourses: int, prerequisites: List[List[int]]) -> List[int]:
+        from collections import deque, defaultdict
+    
+        adj = defaultdict(list)
+        indegree = defaultdict(int)
+        queue = deque([])
+        taken_order = []
+    
+        for cres in range(numCourses):
+            indegree[cres] = 0
+    
+        for cres, pre in prerequisites:
+            adj[pre].append(cres)
+            indegree[cres] += 1
+    
+        for cres in indegree:#这里改成遍历range(numCourses)则不需要前面在入度表里给每个cres赋0
+            if indegree[cres] == 0:
+                queue.append(cres)
+    
+        if len(queue) == numCourses:
+            return [cres for cres in range(numCourses)]
+    
+        while queue:
+            pre = queue.popleft()
+            taken_order.append(pre)
+    
+            for cres in adj[pre]:
+                indegree[cres] -= 1
+    
+                if indegree[cres] == 0:
+                    queue.append(cres)
+    
+        if len(taken_order) == numCourses:
+            return taken_order
+    
+        return []
+    ```
+    
+    
 
 ### 体系三：普通图的遍历 (Graph Traversal)
 
 处理一般的无向图或有向图，核心是 **“防止走回头路”** (visited set) 和 **“深拷贝”**。
 
 - **包含题目**：
+  
   - **133. 克隆图** (图的深拷贝) <a id="lc-133"></a>
   
     - **核心逻辑**：由于图可能有环，通过 `HashMap` 来记录 `原节点 -> 克隆节点` 的映射。如果一个节点已经克隆过（在 Map 里），直接返回 Map 里的引用，否则创建新节点并递归克隆邻居。
