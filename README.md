@@ -66,13 +66,15 @@
 | 56      | 25           | [K 个一组翻转链表](#lc-25) | 🔥           | 🔴 困难   | 分组迭代 / 递归       | 结构修改 (进阶)       |
 | 57 | 92 | [反转链表II](#lc-92) |  | 🟡 中等 | 双指针结构变形 | 结构修改（反转） |
 | 58 | 146 | [LRU缓存](#lc-146) | 🔥 | 🟡 中等 | 哈希双向链表 | 链表系统设计 |
-| 59 | 98| [验证二叉搜索树](#lc-98) | 🔥 | 🟡 中等 | 中序遍历 / 递归边界   | 二叉树-属性      |
+| 59 | 98| [验证二叉搜索树](#lc-98) | 🔥 | 🟡 中等 | DFS 中序遍历 / 递归边界 | 二叉树-属性      |
 | 60 | 102| [二叉树的层序遍历](#lc-102) | 🔥 | 🟡 中等 | BFS (队列)            | 二叉树-遍历      |
 | 61 | 104| [二叉树的最大深度](#lc-104) | 🔥 | 🟢 简单 | DFS / BFS             | 二叉树-属性      |
 | 62 | 236| [最近公共祖先](#lc-236) | 🔥 | 🟡 中等 | DFS (后序)            | 二叉树-祖先/路径 |
 | 63 | 124| [二叉树中最大路径和](#lc-124) | 🔥 | 🔴 困难 | DFS (后序) + 全局最大 | 二叉树-祖先/路径 |
-| 64 | 94 | 二叉树中序遍历 | 🔥 |  |  |  |
+| 64 | 94 | [二叉树中序遍历](#lc-94) | 🔥 | 🟢 简单 | DFS 中序遍历 / 递归边界 |  |
 | 65 | 128 | [最长连续序列](#lc-128) | 🔥 | 🟡 中等 | 哈希 | |
+| 66 | 234 | [回文链表](#lc-234) | 🔥 | 🟢 简单 | 链表 | |
+| 67 | 394 | 字符串解码 | 🔥 | 🟡 中等 | 基础栈 | |
 
 ---
 
@@ -834,8 +836,42 @@ def subarraySum(nums, k):
       
           return max_len
       ```
-
-
+  
+  - 394. 字符串解码<a id="lc-394"></a>
+  
+         - 本题难点在于括号内嵌套括号，需要**从内向外**生成与拼接字符串，这与栈的**先入后出**特性对应。
+           ```python
+           def decodeString(self, s: str) -> str:
+               stack = []
+               res= ''
+               multi= 0
+           
+               for i, cha in enumerate(s):
+                   if '0' <= cha <= '9':
+                       multi = multi*10 + int(cha) # multiple for incoming string
+           
+                   if cha == '[':
+                       # append current multi and res string
+                       # note the muti is used when ] ouccers
+                       stack.append((multi, res))
+                       # and now they should be reset for recording the substring inside current []
+                       multi = 0
+                       res = ''
+           
+                   if 'a' <= cha <= 'z':
+                       res += cha
+           
+                   if cha == ']':
+                       # res now record all cha since last [
+                       # multi is for current recorded res
+                       # And the multipled recorded res should be appended to prev_res
+                       cur_multi, prev_res = stack.pop()
+                       res = prev_res + cur_multi * res
+           
+               return res 
+           ```
+  
+           
 
 ### 体系二：单调栈 (Monotonic Stack) —— “寻找邻居与范围扩散”
 
@@ -893,12 +929,13 @@ def subarraySum(nums, k):
             while stack and h < heights[stack[-1]]:
                 # 核心逻辑：弹栈，算面积
                 cur_height_index = stack.pop()
+                # 注意，这个pop出的值只用于access当前高度，不用于计算边界
                 cur_height = heights[cur_height_index]
                 # 此时：
                 # i 是cur_height_index右边界 (right boundary) -> 第一个比它矮的
                 # stack[-1] 是左边界 (left boundary) -> 栈里剩下的那个肯定是比它矮的
                 left_boundary = stack[-1]
-                right_boundary = i
+                right_boundary = i#必须使用i，因为它是锚点，cur_height_index每次都会变
                 # 宽度计算公式：(右 - 左 - 1), 即面积最多延伸到两边边界（两百年第一个小的数）的上一个
                 # 这样可以保证最大化面积
                 width = right_boundary - left_boundary - 1
@@ -2519,7 +2556,10 @@ def bfs(start_node, target_node):
 
 **核心思路**：
 
-1. **哨兵节点 (Dummy Node)**：只要头节点可能发生变化（如删除头节点、合并链表），无脑使用 Dummy 节点指向 head，最后返回 `dummy.next`。
+1. **哨兵节点 (Dummy Node)**：只要头节点可能发生变化（如删除头节点、合并链表），无脑使用 Dummy 节点指向 head，最后返回 `dummy.next`。没有哨兵可能会引发：
+   1. **空指针解引用引发崩溃**：随时可能出现的 `None.next` 报错。
+   2. **特殊边界开小灶**：由于第 1 个节点在空间结构上没有前驱者（没有 `.next` 指向它），你必须为它单独写一坨 `if` 逻辑。否则head有可能直接被删除。
+
 2. **双指针 (Two Pointers)**：
    - **快慢指针**：解决环、中点、倒数第 N 个节点问题。
    - **合并指针**：类似归并排序的 merge 过程。
@@ -2580,9 +2620,15 @@ def bfs(start_node, target_node):
     - 核心逻辑：
   
       1. 注意结束后，把反转的链表的首尾与原链表pre和tail连接。
+      
       2. 要引入哨兵节点，否则当反转的左节点 是节点1 本身的时候，它会找不到pre前节点，导致后面无法进行。
-  
-      2. 还有一个要注意的是尾部的赋值涉及到python变量的赋值问题。节点可以看作是对象（object）是被永久分配地址的，但是变量诸如tail和curr则会和当前被分配的对象的变化情况保持一致，具体可以看下面代码中对tail的注释。
+      
+      3. 还有一个要注意的是尾部的赋值涉及到python变量的赋值问题。节点可以看作是对象（object）是被永久分配地址的，但是变量诸如tail和curr则会和当前被分配的对象的变化情况保持一致，具体可以看下面代码中对tail的注释。
+      
+         直白一些，当我们将pre = dummy时，
+      
+         - 我们`pre = pre.next`的时候dummy没有任何变化，因为我们在撕掉pre的地址赋给新的地址；
+         - 但是当我们改写`pre.next`，本质上我们改的是这个对象的值，且这个对象在dummy中，dummy顺着地址递归过去会走到改过的值上，而不是原始值。
   
     ```python
     def reverseBetween(self, head: Optional[ListNode], left: int, right: int) -> Optional[ListNode]:
@@ -2604,6 +2650,7 @@ def bfs(start_node, target_node):
         tail = curr
     
         # 这里需要循环n+1次，因为left到right共有right-left+1个节点
+        # 结束后curr会越界指向当前right的下一个节点
         for _ in range(n+1):
             temp = curr.next
             # 此时 tail和curr依然指向相同的left节点，所以
@@ -2613,7 +2660,8 @@ def bfs(start_node, target_node):
             # 注意，这个时候curr要和原来的left节点，tail节点脱钩
             # 所以以后curr的变化不会引起tail变化
             curr = temp
-    
+    	# 由于之前tail脱钩,tail当前指向的是反转前的left节点，此时left节点已经作为反转后的链表尾部了（也就是说left.next/tail.next = None）
+        # 由于我们做了n+1次反转，最后curr = temp的时候，指向了right的下一个节点，正好就是反转后要接入的尾部链表节点
         # 把两端的节点接回反转后的链表
         tail.next = curr
         pre.next = prev
@@ -2883,6 +2931,60 @@ def bfs(start_node, target_node):
           return head
       ```
       
+  
+  - **234.回文链表**<a id="lc-234"></a>
+  
+    ```python
+    def isPalindrome(self, head: Optional[ListNode]) -> bool:
+        vals = []
+        dummy = head
+        while dummy:
+            vals.append(dummy.val)
+            dummy = dummy.next
+    
+        return vals == vals[::-1] # [start:stop:step]
+    
+    def isPalindrome(self, head: Optional[ListNode]) -> bool:
+        # 递归
+        left = head
+    
+        def is_pal(right: Optional[ListNode]) -> bool:
+            # 「递」，先把 right 移到链表末尾
+            if right.next and not is_pal(right.next):
+                return False
+            # 「归」的过程就是在从右到左遍历链表
+            nonlocal left # 声明当前子函数内部的 left 变量不是局部变量，而是属于它外层（嵌套它）的那层函数的变量。
+            if left.val != right.val:
+                return False
+            left = left.next  # left 往右走
+            return True  # 归，right 会往左走
+    
+        return is_pal(head)
+    
+    
+    def isPalindrome(self, head: Optional[ListNode]) -> bool:
+        import copy
+        prev,curr = None, head
+        dummy = copy.deepcopy(head)
+    	# 反转链表
+        while curr:
+            nxt = curr.next
+            curr.next = prev
+            prev = curr
+            curr = nxt
+    
+        while prev and dummy:
+            if prev.val != dummy.val:
+                return False  # 判定不相等
+            # 同步执行重新赋值
+            prev = prev.next
+            dummy = dummy.next
+    
+        return True
+    
+    ```
+  
+    
 
 ### 体系三：合并逻辑 (Merging) 
 
@@ -3015,22 +3117,62 @@ def bfs(start_node, target_node):
 
 ## 模块九：二叉树 (Binary Tree) / 递归
 
-**核心关键词**：`DFS` (递归/栈)、`BFS` (队列)、`自底向上` (后序)、`自顶向下` (前序)。 二叉树题目通常分为两类：一类是**遍历** (怎么走)，一类是**构造/路径** (怎么算)。
+### 二叉树的概念
+
+```
+	   [A]          <-- 根节点 (Root)
+      /   \
+    [B]   [C]       <-- A 的左、右子节点
+    /     / \
+  [D]   [E] [F]     <-- 叶子节点 (Leaf，没有子节点的末端)
+```
+
+二叉树（Binary Tree）是一种树形数据结构，它的核心特点是：每个节点最多只能有两个子节点，通常被称为左子节点（Left Child）和右子节点（Right Child）。二叉树并不要求每个节点必须有两个女儿，它可以有 0 个（叶子节点）、1 个或 2 个。
+
+当二叉树被拍平放进数组后，节点之间失去了物理指针的联系。但神奇的是，它们之间演化出了一套**完美的数学几何关系**。
+
+根据数组起始下标的不同（从 0 开始还是从 1 开始），公式会略有差异。在实际编程（Python/C++/Java）中，**0-based（从0开始）** 是最常用的。
+
+### 根节点从 0 开始存储
+
+假设当前节点的数组下标为 $i$：
+
+- **左子节点**的下标：$$\text{Left} = 2i + 1$$
+- **右子节点**的下标：$$\text{Right} = 2i + 2$$
+- **父节点**的下标：$$\text{Parent} = \lfloor \frac{i - 1}{2} \rfloor \quad \text{(在代码中直接用整数除法 } (i - 1) // 2 \text{)}$$
+
+### 根节点从 1 开始存储
+
+在很多数据结构教科书或算法竞赛（如二叉堆实现）中，为了让公式更对称，大家喜欢把数组的 `0` 号槽位留空，**从下标 1 开始存根节点**。
+
+假设当前节点的数组下标为 $i$：
+
+- **左子节点**的下标：$$\text{Left} = 2i$$（否则无左节点）
+- **右子节点**的下标：$$\text{Right} = 2i + 1$$（否则无右节点）
+- **父节点**的下标：$$\text{Parent} = \lfloor \frac{i}{2} \rfloor \quad \text{(即 } i // 2 \text{)}$$
+
+当然一般地，这种存放方法在满二叉树的时候时可以的。当二叉树不满时，则会浪费储存空间。所以更加普遍的的（在leetcode中），是使用类似于链表来储存：
 
 ```python
 # Definition for a binary tree node.
 class TreeNode:
- 	def __init__(self, val=0, left=None, right=None):
-     	self.val = val
-     	self.left = left
-     	self.right = right
+ def __init__(self, val=0, left=None, right=None):
+     self.val = val
+     self.left = left # left child leaf
+     self.right = right # right child leaf
 ```
+
+**核心关键词**：`DFS` (递归/栈)、`BFS` (队列)、`自底向上` (后序)、`自顶向下` (前序)。 二叉树题目通常分为两类：一类是**遍历** (怎么走)，一类是**构造/路径** (怎么算)。
+
+
 
 ### 体系一：遍历与属性验证 (DFS/BFS)
 
 基础的树形结构操作。
 
-- **94. 二叉树中序遍历**
+- **二叉树的前序遍历**: 访问顺序：根（中），左，右
+
+- **94. 二叉树中序遍历**<a id="lc-94"></a>
 
   - DFS 搜索，先左再中再右
 
@@ -3054,10 +3196,9 @@ class TreeNode:
     
         dfs(root)
         return res
-    
     ```
   
-- **102. 二叉树的层序遍历** (Hot 100)
+- **102. 二叉树的层序遍历** (Hot 100)<a id="lc-102"></a>
 
   - **核心**：BFS (广度优先搜索)。
 
@@ -3097,11 +3238,9 @@ class TreeNode:
         return traverse
     ```
 
-    
-
-- **104. 二叉树的最大深度** (Hot 100)
+- **104. 二叉树的最大深度** (Hot 100)<a id="lc-104"></a>
   
-  - **核心**：DFS (后序遍历)。
+  - **核心**：DFS (后序遍历)。左，右，根（中）。
 
   - **公式**：`MaxDepth = max(L, R) + 1`。也可以用层序遍历做。
   
@@ -3127,22 +3266,134 @@ class TreeNode:
         return max_len
     ```
   
-- **98. 验证二叉搜索树** (Hot 100)
+- **98. 验证二叉搜索树** (Hot 100)<a id="lc-98"></a>
   
   - **核心**：**中序遍历** 或 **递归带上下界**。
+  
   - **坑点**：不能只判断 `left < root < right`，要保证**整个左子树**都小于 root。通常用中序遍历（结果必须是升序数组）最简单。
+  
+    ```python
+    def isValidBST(self, root: Optional[TreeNode]) -> bool:
+        from collections import deque
+    
+        if not root:
+            return False
+    
+        highest = float('inf')
+        lowest = float('-inf')
+        queue = deque([(root, lowest, highest)])
+    
+        while queue:
+            node, lowest, highest = queue.popleft()
+            if not (lowest < node.val < highest): # None is impossible
+                return False
+    
+            if node.left:
+                queue.append((node.left, lowest, node.val))# there is no lower bound for left part
+    
+            if node.right:
+                queue.append((node.right, node.val, highest)) # there is no upper bound for right part
+    
+    
+        return True
+    ```
+  
+    
 
 ### 体系二：公共祖先与路径 (自底向上思维)
 
 这类题目通常较难，需要利用**后序遍历**（左右根）的特性，从叶子节点向上传递信息。
 
-- **236. 二叉树的最近公共祖先 (LCA)** (Hot 100)
+- **236. 二叉树的最近公共祖先 (LCA)** (Hot 100)<a id="lc-236"></a>
+  
   - **核心**：**后序遍历 + 状态传递**。
+  
   - **逻辑**：
     1. 如果当前节点是 p 或 q，返回当前节点。
     2. 如果左搜到了且右搜到了，当前节点就是 LCA。
     3. 如果只搜到一边，返回那一边。
-- **124. 二叉树中的最大路径和** (Hot 100, Hard)
+    
+    ```python
+    class TreeNode:
+        def __init__(self, val=0, left=None, right=None):
+            self.val = val
+            self.left = left
+    
+    class Solution:
+        def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':
+            # 分别找到p和q的祖先节点，然后从祖先节点中找到最近公共祖先
+            from collections import deque
+    
+            if root == None:
+                return None
+    
+            self.add_flag = True    # 用于标记是否找到目标节点
+            self.anc_queue = deque([]) # 用于存储祖先节点
+            
+            def dfs(node, target):
+                # 如果节点为空或已经找到目标节点，则提前返回
+                if node == None or not self.add_flag: 
+                    return
+    
+                if node.val == target.val:
+                    self.anc_queue.append(node)
+                    self.add_flag = False
+    
+                if self.add_flag:
+                    self.anc_queue.append(node)
+    
+                dfs(node.left, target)
+                dfs(node.right, target)
+    
+                if self.add_flag: # 如果没找到目标节点，则将当前节点从祖先节点中移除
+                    self.anc_queue.pop()
+                
+                return
+    
+            # 分别找到p和q的祖先节点
+            dfs(root, p)
+            anc_p = self.anc_queue
+    
+            self.anc_queue = deque([])
+            self.add_flag = True
+    
+            dfs(root, q)
+            anc_q = self.anc_queue
+            common_anc = root
+    
+            # 从祖先节点中找到最近公共祖先
+            while anc_p and anc_q:
+                node_p = anc_p.popleft()
+                node_q = anc_q.popleft()
+                if node_p.val == node_q.val:
+                    common_anc = node_p
+                else:
+                    return common_anc
+    
+            return common_anc
+        
+    # 更简单的办法
+    class Solution:
+        def lowestCommonAncestor(self, root: 'TreeNode', p: 'TreeNode', q: 'TreeNode') -> 'TreeNode':
+            # 基准条件：如果撞到空，或者撞到了 p 或 q，直接把当前节点交上去
+            if not root or root == p or root == q:
+                return root
+            
+            # 顺着左、右子树往下搜
+            left = self.lowestCommonAncestor(root.left, p, q)
+            right = self.lowestCommonAncestor(root.right, p, q)
+            
+            # 【核心归纳判断】
+            if left and right: 
+                return root  # 如果左右子树都有收获，说明 p 和 q 分居两侧，当前节点就是最近公共祖先！
+                
+            return left if left else right  # 如果只有一边有收获，把那个收获顺着竹竿传上去
+    ```
+    
+    
+  
+- **124. 二叉树中的最大路径和** (Hot 100, Hard)<a id="lc-124"></a>
+  
   - **核心**：**后序遍历 + 全局变量更新**。
   - **难点**：区分“**能贡献给父节点的路径**”（只能选一条边）和“**当前子树内部的最大路径**”（可以是个倒V型）。
   - **公式**：`return node.val + max(left, right, 0)`。
